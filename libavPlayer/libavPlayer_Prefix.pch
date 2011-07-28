@@ -1,0 +1,14 @@
+//
+// Prefix header for all source files of the 'libavPlayer' target in the 'libavPlayer' project.
+//
+
+#ifdef __OBJC__
+    #import <Cocoa/Cocoa.h>
+	#import <CoreVideo/CoreVideo.h>
+	#import <OpenGL/OpenGL.h>
+	#import <QuartzCore/QuartzCore.h>
+	#import <CoreVideo/CoreVideo.h>
+	#import <AudioToolbox/AudioToolbox.h>
+#endif
+
+//#import <SDL/SDL.h>
