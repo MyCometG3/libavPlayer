@@ -42,7 +42,7 @@
 
 #include "LAVPthread.h"
 
-#define ALLOW_GPL_CODE 0
+#define ALLOW_GPL_CODE 1
 
 /* =========================================================== */
 
