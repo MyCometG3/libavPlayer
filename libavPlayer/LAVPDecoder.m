@@ -93,7 +93,7 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	
 	self.is->decoderThread = [NSThread currentThread];
 	
-	NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:0.02 
+	NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/60 
 													  target:self 
 													selector:@selector(refreshPicture) 
 													userInfo:nil 
