@@ -59,7 +59,7 @@
 		16A196A013ADFA23008825FF /* LAVPaudio.m in Sources */ = {isa = PBXBuildFile; fileRef = 16A193C513ADC268008825FF /* LAVPaudio.m */; };
 		16A196D313ADFB8E008825FF /* libavPlayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* libavPlayer.framework */; };
 		16A1971613ADFE22008825FF /* libavPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 16A1971513ADFE22008825FF /* libavPlayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
-		16E3B1C213BA0AE4000E6062 /* LAVPutil.c.c in Sources */ = {isa = PBXBuildFile; fileRef = 16E3B1C113BA0AE4000E6062 /* LAVPutil.c.c */; };
+		16E3B1C213BA0AE4000E6062 /* LAVPutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 16E3B1C113BA0AE4000E6062 /* LAVPutil.c */; };
 		16E3B23213BA752C000E6062 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A196F813ADFDC1008825FF /* Cocoa.framework */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
@@ -128,7 +128,7 @@
 		16A195EB13ADF712008825FF /* LAVPView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LAVPView.m; sourceTree = "<group>"; };
 		16A196F813ADFDC1008825FF /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		16A1971513ADFE22008825FF /* libavPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libavPlayer.h; sourceTree = "<group>"; };
-		16E3B1C113BA0AE4000E6062 /* LAVPutil.c.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = LAVPutil.c.c; sourceTree = "<group>"; };
+		16E3B1C113BA0AE4000E6062 /* LAVPutil.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = LAVPutil.c; sourceTree = "<group>"; };
 		32DBCF5E0370ADEE00C91783 /* libavPlayer_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = libavPlayer_Prefix.pch; sourceTree = "<group>"; };
 		8DC2EF5A0486A6940098B216 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		8DC2EF5B0486A6940098B216 /* libavPlayer.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = libavPlayer.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -266,7 +266,7 @@
 				16A193BC13ADC1C2008825FF /* LAVPsubs.m */,
 				16A1932A13ADB3E3008825FF /* LAVPvideo.h */,
 				16A1932B13ADB3E3008825FF /* LAVPvideo.m */,
-				16E3B1C113BA0AE4000E6062 /* LAVPutil.c.c */,
+				16E3B1C113BA0AE4000E6062 /* LAVPutil.c */,
 				166F893613E0555A00B74CCA /* LAVPthread.c */,
 				166F893713E0555A00B74CCA /* LAVPthread.h */,
 			);
@@ -378,7 +378,7 @@
 				16A195AB13ADF5F1008825FF /* LAVPLayer.m in Sources */,
 				16A195ED13ADF712008825FF /* LAVPView.m in Sources */,
 				16A196A013ADFA23008825FF /* LAVPaudio.m in Sources */,
-				16E3B1C213BA0AE4000E6062 /* LAVPutil.c.c in Sources */,
+				16E3B1C213BA0AE4000E6062 /* LAVPutil.c in Sources */,
 				166F893813E0555A00B74CCA /* LAVPthread.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
