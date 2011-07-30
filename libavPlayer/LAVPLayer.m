@@ -182,17 +182,11 @@
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
 	if (!_stream) return NO;
-#if 1
-	//NSLog(@"canDrawInCGLContext:pixelFormat:forLayerTime:displayTime:");
-	if (!timeStamp) {
-		NSLog(@"canDraw:CVTimeStamp is NULL!");
-		return NO;
-	}
+
+#if 0
+	return YES;
 #endif
 	
-#if 1
-	return YES;
-#else
 	if (!CGRectEqualToRect(prevRect, [self bounds])) {
 		prevRect = [self bounds];
 		return YES;
@@ -202,7 +196,6 @@
 		return [_stream readyForCurrent];
 	else
 		return [_stream readyForTime:timeStamp];
-#endif
 }
 
 - (void) drawInCGLContext:(CGLContextObj)glContext 
@@ -211,13 +204,6 @@
 			  displayTime:(const CVTimeStamp *)timeStamp
 {
 	if (!_stream) return;
-#if 1
-	//NSLog(@"drawInCGLContext:pixelFormat:forLayerTime:displayTime:");
-	if (!timeStamp) {
-		NSLog(@"draw:CVTimeStamp is NULL!");
-		return;
-	}
-#endif
 	
 	// Prepare CIImage
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
