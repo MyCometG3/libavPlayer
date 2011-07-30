@@ -533,7 +533,7 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
 	if (err < 0) goto bail;
 	
 	// Prepare stream info
-	err = av_find_stream_info(is->ic);
+	err = avformat_find_stream_info(is->ic, NULL);
 	if (err < 0) goto bail;
 	
 	if (is->ic->pb) 
