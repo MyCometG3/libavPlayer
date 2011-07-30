@@ -556,7 +556,7 @@ int hasImage(void *opaque, double_t targetpts)
 	if (is->pictq_size > 0) {
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
-#if 1
+		
 		if (!vp) {
 			for (int index = 0; index < is->pictq_size; index++) {
 				tmp = &is->pictq[index];
@@ -571,8 +571,6 @@ int hasImage(void *opaque, double_t targetpts)
 				}
 			}
 		}
-#endif
-#if 1
 		if (!vp) {
 			for (int index = 0; index < is->pictq_size; index++) {
 				tmp = &is->pictq[index];
@@ -585,7 +583,7 @@ int hasImage(void *opaque, double_t targetpts)
 				}
 			}
 		}
-#endif
+		
 		if (vp && vp->pts != is->lastPTScopied) {
 			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
@@ -619,10 +617,9 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 	
 	if (is->pictq_size > 0) {
 		int result = 0;
-		
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
-#if 1
+		
 		if (!vp) {
 			for (int index = 0; index < is->pictq_size; index++) {
 				tmp = &is->pictq[index];
@@ -637,8 +634,6 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 				}
 			}
 		}
-#endif
-#if 1
 		if (!vp) {
 			for (int index = 0; index < is->pictq_size; index++) {
 				tmp = &is->pictq[index];
@@ -651,11 +646,9 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 				}
 			}
 		}
-#endif
+		
 		if (vp) {
-			if (vp->pts == is->lastPTScopied) {
-				goto bail;
-			}
+			if (vp->pts == is->lastPTScopied) goto bail;
 			
 #if ALLOW_GPL_CODE
 			uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
@@ -669,21 +662,16 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 #else
 			const uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
 			result = sws_scale(is->sws420to422, 
-					  in, 
-					  vp->bmp->linesize, 
-					  0, 
-					  vp->height, 
-					  out, 
-					  &pitch);
+							   in, vp->bmp->linesize, 0, vp->height, 
+							   out, &pitch);
 #endif
 			
 			if (result > 0) {
-				is->lastPTScopied = vp->pts;
 				//NSLog(@"copyImage(%.3lf) (%d); %.3lf", targetpts, is->pictq_size, vp->pts-targetpts);
+				is->lastPTScopied = vp->pts;
+				
 				LAVPUnlockMutex(is->pictq_mutex);
 				return 1;
-			} else {
-				//NSLog(@"copyImage(%.3lf) (%d); %.3lf sws_returned_error", targetpts, is->pictq_size, vp->pts-targetpts);
 			}
 			
 		} else {
@@ -716,11 +704,13 @@ int hasImageCurrent(void *opaque)
 	if (is->pictq_size > 0) {
 		int index = is->pictq_rindex;
 		VideoPicture *vp = &is->pictq[index];
-		assert(vp);
-		
-		if (vp->pts != is->lastPTScopied) {
-			LAVPUnlockMutex(is->pictq_mutex);
-			return 1;
+		if(vp) {
+			if (!vp->allocated) goto bail;
+			
+			if (vp->pts != is->lastPTScopied) {
+				LAVPUnlockMutex(is->pictq_mutex);
+				return 1;
+			}
 		}
 	}
 	
@@ -754,39 +744,36 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 		
 		int index = is->pictq_rindex;
 		VideoPicture *vp = &is->pictq[index];
-		assert(vp);
 		
-		if (vp->pts == is->lastPTScopied) {
-			goto bail;
-		}
-		
-#if ALLOW_GPL_CODE
-		uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
-		size_t inpitch[4] = {vp->bmp->linesize[0], vp->bmp->linesize[1], vp->bmp->linesize[2], vp->bmp->linesize[3]};
-		copy_planar_YUV420_to_2vuy(vp->width, vp->height, 
-								   in[0], inpitch[0], 
-								   in[1], inpitch[1], 
-								   in[2], inpitch[2], 
-								   data, pitch);
-		result = 1;
-#else
-		const uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
-		result = sws_scale(is->sws420to422, 
-				  in, 
-				  vp->bmp->linesize, 
-				  0, 
-				  vp->height, 
-				  out, 
-				  &pitch);
-#endif
-		
-		
-		if (result > 0) {
-			//NSLog(@"NOTE: copyImageCurrent() done. = %lf", vp->pts);
-			is->lastPTScopied = vp->pts;
-			*targetpts = vp->pts;
+		if (vp) {
+			if (!vp->allocated) goto bail;
 			
-			LAVPUnlockMutex(is->pictq_mutex);
+			if (vp->pts == is->lastPTScopied) goto bail;
+			
+#if ALLOW_GPL_CODE
+			uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
+			size_t inpitch[4] = {vp->bmp->linesize[0], vp->bmp->linesize[1], vp->bmp->linesize[2], vp->bmp->linesize[3]};
+			copy_planar_YUV420_to_2vuy(vp->width, vp->height, 
+									   in[0], inpitch[0], 
+									   in[1], inpitch[1], 
+									   in[2], inpitch[2], 
+									   data, pitch);
+			result = 1;
+#else
+			const uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
+			result = sws_scale(is->sws420to422, 
+							   in, vp->bmp->linesize, 0, vp->height, 
+							   out, &pitch);
+#endif
+			
+			if (result > 0) {
+				//NSLog(@"NOTE: copyImageCurrent() done. = %lf", vp->pts);
+				is->lastPTScopied = vp->pts;
+				*targetpts = vp->pts;
+				
+				LAVPUnlockMutex(is->pictq_mutex);
+				return 1;
+			}
 		}
 	}
 	
