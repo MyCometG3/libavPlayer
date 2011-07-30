@@ -262,14 +262,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	assert (result == kCVReturnSuccess && pb);
 	
-#if 0
+#if 1
 	// Dummy fill
 	CVPixelBufferLockBaseAddress(pb, 0);
 	char *p = CVPixelBufferGetBaseAddress(pb);
 	size_t rowLength = CVPixelBufferGetBytesPerRow(pb);
 	size_t rowCount = CVPixelBufferGetHeight(pb);
 	{
-	#if 0
+	#if 1
 		memset(p, 0, rowLength * rowCount);
 	#else
 		int row = 0;
