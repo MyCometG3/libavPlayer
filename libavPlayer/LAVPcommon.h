@@ -97,63 +97,19 @@ typedef struct SubPicture {
 } SubPicture;
 
 typedef struct VideoState {
-	void *decoder;	// LAVPDecoder instance
-	void *decoderThread;	// NSThread instance for decoderThread
-	int abort_request;
-	int show_status;
-    
-	AVFormatContext *ic;
+	// unused
 	AVFormatContext *avformat_opts;
-	
-    enum AVSampleFormat audio_src_fmt;
-	
-    unsigned int audio_buf_size; /* in bytes */
-    int audio_buf_index; /* in bytes */
-    double audio_diff_avg_coef;
-    double audio_diff_threshold;
-    int audio_diff_avg_count;
-    AVPacket audio_pkt;
-    AVPacket audio_pkt_temp;
-    AVAudioConvert *reformat_ctx;
-	int64_t audio_callback_time;
-    double audio_clock;
-    double audio_diff_cum; /* used for AV difference average computation */
-    DECLARE_ALIGNED(16,uint8_t,audio_buf1)[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
-    DECLARE_ALIGNED(16,uint8_t,audio_buf2)[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
-    uint8_t *audio_buf;
-	
-    int video_stream;
-    int audio_stream;
-    int subtitle_stream;
-	
-    AVStream *video_st;
-    AVStream *audio_st;
-    AVStream *subtitle_st;
-	
-    PacketQueue audioq;
-    PacketQueue videoq;
-    PacketQueue subtitleq;
-	
-	dispatch_queue_t parse_queue;
-	dispatch_group_t parse_group;
-	dispatch_queue_t video_queue;
-	dispatch_group_t video_group;
-	dispatch_queue_t subtitle_queue;
-	dispatch_group_t subtitle_group;
-	
-    LAVPmutex *pictq_mutex;
-    LAVPmutex *subpq_mutex;
-    LAVPcond *pictq_cond;
-    LAVPcond *subpq_cond;
-	
 	struct SwsContext *sws_opts;
     struct SwsContext *img_convert_ctx;
 	int sws_flags;
 	
-    int subtitle_stream_changed;
-
-	int seek_by_bytes;
 	AVCodecContext *avcodec_opts[AVMEDIA_TYPE_NB];
+	
+	// LAVPcore
+	void *decoder;	// LAVPDecoder instance
+	void *decoderThread;	// NSThread instance for decoderThread
+	int abort_request;
+	int show_status;
 	
 	int loop;
     int av_sync_type;
@@ -165,10 +121,37 @@ typedef struct VideoState {
     int seek_flags;
     int64_t seek_pos;
     int64_t seek_rel;
+	int seek_by_bytes;
     int paused;
     int last_paused;
     int read_pause_return;
 	
+	AVFormatContext *ic;
+    int video_stream;
+    int subtitle_stream;
+    int audio_stream;
+	
+    AVStream *audio_st;
+    AVStream *video_st;
+    AVStream *subtitle_st;
+	
+    PacketQueue audioq;
+    PacketQueue videoq;
+    PacketQueue subtitleq;
+	
+    LAVPmutex *pictq_mutex;
+    LAVPmutex *subpq_mutex;
+    LAVPcond *pictq_cond;
+    LAVPcond *subpq_cond;
+	
+	dispatch_queue_t parse_queue;
+	dispatch_group_t parse_group;
+	dispatch_queue_t video_queue;
+	dispatch_group_t video_group;
+	dispatch_queue_t subtitle_queue;
+	dispatch_group_t subtitle_group;
+	
+	// LAVPvideo
     double frame_timer;
     double video_current_pts;                    ///<current displayed pts (different from video_clock if frame fifos are used)
     double video_current_pts_drift;              ///<video_current_pts - time (av_gettime) at which we updated video_current_pts - used to have running video pts
@@ -184,16 +167,36 @@ typedef struct VideoState {
     float skip_frames_index;
 	
     int width, height, xleft, ytop;
+	double lastPTScopied;
     VideoPicture pictq[VIDEO_PICTURE_QUEUE_SIZE];
     int pictq_size, pictq_rindex, pictq_windex;
+	struct SwsContext *sws420to422;
+	
+	// LAVPsubs
+    int subtitle_stream_changed;
 	
     SubPicture subpq[SUBPICTURE_QUEUE_SIZE];
     int subpq_size, subpq_rindex, subpq_windex;
 	
-	struct SwsContext *sws420to422;
-	double lastPTScopied;
+	// LAVPaudio
+    enum AVSampleFormat audio_src_fmt;
 	
-	//
+    unsigned int audio_buf_size; /* in bytes */
+    int audio_buf_index; /* in bytes */
+    double audio_diff_avg_coef;
+    double audio_diff_threshold;
+    int audio_diff_avg_count;
+    AVPacket audio_pkt;
+    AVPacket audio_pkt_temp;
+    AVAudioConvert *reformat_ctx;
+	int64_t audio_callback_time;
+    double audio_diff_cum; /* used for AV difference average computation */
+	
+    DECLARE_ALIGNED(16,uint8_t,audio_buf1)[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
+    DECLARE_ALIGNED(16,uint8_t,audio_buf2)[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
+    uint8_t *audio_buf;
+	
+    double audio_clock;
 	AudioQueueRef outAQ;
 	AudioStreamBasicDescription asbd;
 	dispatch_queue_t audioDispatchQueue;
