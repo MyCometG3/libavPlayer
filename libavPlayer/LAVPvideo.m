@@ -787,7 +787,6 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 			*targetpts = vp->pts;
 			
 			LAVPUnlockMutex(is->pictq_mutex);
-			return 1;
 		}
 	}
 	
