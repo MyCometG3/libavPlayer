@@ -550,7 +550,9 @@ int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t reordered_pts, int6
 int hasImage(void *opaque, double_t targetpts)
 {
 	VideoState *is = opaque;
+	
 	LAVPLockMutex(is->pictq_mutex);
+	
 	if (is->pictq_size > 0) {
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
@@ -589,6 +591,8 @@ int hasImage(void *opaque, double_t targetpts)
 			return 1;
 		}
 	}
+	
+bail:
 	LAVPUnlockMutex(is->pictq_mutex);
 	return 0;
 }
@@ -612,6 +616,7 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 #endif
 	
 	LAVPLockMutex(is->pictq_mutex);
+	
 	if (is->pictq_size > 0) {
 		int result = 0;
 		
@@ -649,8 +654,7 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 #endif
 		if (vp) {
 			if (vp->pts == is->lastPTScopied) {
-				LAVPUnlockMutex(is->pictq_mutex);
-				return 0;
+				goto bail;
 			}
 			
 #if ALLOW_GPL_CODE
@@ -680,8 +684,6 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 				return 1;
 			} else {
 				//NSLog(@"copyImage(%.3lf) (%d); %.3lf sws_returned_error", targetpts, is->pictq_size, vp->pts-targetpts);
-				LAVPUnlockMutex(is->pictq_mutex);
-				return 0;
 			}
 			
 		} else {
@@ -696,30 +698,35 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 				  , is->pictq[3].pts-targetpts
 				  );
 #endif
-			LAVPUnlockMutex(is->pictq_mutex);
-			return 0;
 		}
 	}
-	LAVPUnlockMutex(is->pictq_mutex);
+	
+bail:
 	//NSLog(@"copyImage(%.3lf) (%d); vp not ready", targetpts, is->pictq_size);
+	LAVPUnlockMutex(is->pictq_mutex);
 	return 0;
 }
 
 int hasImageCurrent(void *opaque)
 {
 	VideoState *is = opaque;
+	
+	LAVPLockMutex(is->pictq_mutex);
+	
 	if (is->pictq_size > 0) {
-		LAVPLockMutex(is->pictq_mutex);
 		int index = is->pictq_rindex;
 		VideoPicture *vp = &is->pictq[index];
 		assert(vp);
 		
-		if (vp->pts == is->lastPTScopied) {
-			return 0;
+		if (vp->pts != is->lastPTScopied) {
+			LAVPUnlockMutex(is->pictq_mutex);
+			return 1;
 		}
-		return 1;
 	}
-	return 1;
+	
+bail:
+	LAVPUnlockMutex(is->pictq_mutex);
+	return 0;
 }
 
 int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch) 
@@ -740,6 +747,8 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 	}
 #endif
 	
+	LAVPLockMutex(is->pictq_mutex);
+	
 	if (is->pictq_size > 0) {
 		int result = 0;
 		
@@ -748,10 +757,8 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 		assert(vp);
 		
 		if (vp->pts == is->lastPTScopied) {
-			return 0;
+			goto bail;
 		}
-		
-		LAVPLockMutex(is->pictq_mutex);
 		
 #if ALLOW_GPL_CODE
 		uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
@@ -773,16 +780,18 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 				  &pitch);
 #endif
 		
-		LAVPUnlockMutex(is->pictq_mutex);
 		
 		if (result > 0) {
 			//NSLog(@"NOTE: copyImageCurrent() done. = %lf", vp->pts);
 			is->lastPTScopied = vp->pts;
 			*targetpts = vp->pts;
-			return 0;
-		} else {
+			
+			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
 		}
 	}
-	return 1;
+	
+bail:
+	LAVPUnlockMutex(is->pictq_mutex);
+	return 0;
 }
