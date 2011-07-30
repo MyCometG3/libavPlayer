@@ -142,14 +142,17 @@ void video_refresh_timer(void *opaque)
 	
     if (is->video_st) {
 	retry:
+		LAVPLockMutex(is->pictq_mutex);
         if (is->pictq_size > 0) {
             double time= av_gettime()/1000000.0;
             double next_target;
             /* dequeue the picture */
             vp = &is->pictq[is->pictq_rindex];
 			
-            if(time < vp->target_clock)
+            if(time < vp->target_clock) {
+				LAVPUnlockMutex(is->pictq_mutex);
                 return;
+			}
             /* update current video pts */
             is->video_current_pts = vp->pts;
             is->video_current_pts_drift = is->video_current_pts - time;
@@ -169,13 +172,13 @@ void video_refresh_timer(void *opaque)
                     if (++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE)
                         is->pictq_rindex = 0;
 					
-                    LAVPLockMutex(is->pictq_mutex);
                     is->pictq_size--;
                     LAVPCondSignal(is->pictq_cond);
                     LAVPUnlockMutex(is->pictq_mutex);
                     goto retry;
                 }
             }
+			LAVPUnlockMutex(is->pictq_mutex);
 			
             if(is->subtitle_st) {
                 if (is->subtitle_stream_changed) {
@@ -195,6 +198,7 @@ void video_refresh_timer(void *opaque)
                     LAVPCondSignal(is->subpq_cond);
                     LAVPUnlockMutex(is->subpq_mutex);
                 } else {
+					LAVPLockMutex(is->subpq_mutex);
                     if (is->subpq_size > 0) {
                         sp = &is->subpq[is->subpq_rindex];
 						
@@ -212,27 +216,27 @@ void video_refresh_timer(void *opaque)
                             if (++is->subpq_rindex == SUBPICTURE_QUEUE_SIZE)
                                 is->subpq_rindex = 0;
 							
-                            LAVPLockMutex(is->subpq_mutex);
                             is->subpq_size--;
                             LAVPCondSignal(is->subpq_cond);
-                            LAVPUnlockMutex(is->subpq_mutex);
                         }
                     }
+					LAVPUnlockMutex(is->subpq_mutex);
                 }
             }
 			
             /* display picture */
 			video_display(is);
 			
+            LAVPLockMutex(is->pictq_mutex);
+			
             /* update queue size and signal for next picture */
             if (++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE)
                 is->pictq_rindex = 0;
 			
-            LAVPLockMutex(is->pictq_mutex);
             is->pictq_size--;
             LAVPCondSignal(is->pictq_cond);
-            LAVPUnlockMutex(is->pictq_mutex);
         }
+		LAVPUnlockMutex(is->pictq_mutex);
     }
     if (is->show_status) {
         static int64_t last_time;
