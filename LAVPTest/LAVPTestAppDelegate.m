@@ -15,8 +15,8 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
 //	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test" withExtension:@"mp4"];
-//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
-	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
+	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
+//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
 	
 #if 1
 	

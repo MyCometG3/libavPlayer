@@ -1319,7 +1319,7 @@
 			<object class="NSWindowTemplate" id="972006081">
 				<int key="NSWindowStyleMask">271</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{534, 772}, {340, 200}}</string>
+				<string key="NSWindowRect">{{321, 828}, {340, 200}}</string>
 				<int key="NSWTFlags">1954021376</int>
 				<string key="NSWindowTitle">LAVPTest</string>
 				<string key="NSWindowClass">NSWindow</string>
@@ -1391,7 +1391,7 @@
 			<object class="NSWindowTemplate" id="361730372">
 				<int key="NSWindowStyleMask">271</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{57, 754}, {320, 180}}</string>
+				<string key="NSWindowRect">{{0, 848}, {320, 180}}</string>
 				<int key="NSWTFlags">611844096</int>
 				<string key="NSWindowTitle">Window</string>
 				<string key="NSWindowClass">NSWindow</string>
