@@ -257,9 +257,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	CFDictionaryRef attr = NULL;
 	CVPixelBufferRef pb = NULL;
 	
+	assert(width * height > 0);
 	CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault, 
 										  width, height, format, attr, &pb);
-	
 	assert (result == kCVReturnSuccess && pb);
 	
 #if 1

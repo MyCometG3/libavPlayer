@@ -129,10 +129,11 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	CFDictionaryRef attr = NULL;
 	CVPixelBufferRef pixelbuffer = NULL;
 	
+	assert(width * height > 0);
 	CVReturn result = CVPixelBufferCreate(kCFAllocatorDefault, 
 										  width, height, format, attr, &pixelbuffer);
-	
 	assert (result == kCVReturnSuccess && pixelbuffer);
+	
 	return pixelbuffer;
 }
 
