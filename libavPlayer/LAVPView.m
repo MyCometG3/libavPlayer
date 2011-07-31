@@ -270,7 +270,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	size_t rowCount = CVPixelBufferGetHeight(pb);
 	{
 	#if 1
-		memset(p, 0, rowLength * rowCount);
+		memset(p, 128, rowLength * rowCount);
 	#else
 		int row = 0;
 		for (row = 0; row < rowCount; row++) {
