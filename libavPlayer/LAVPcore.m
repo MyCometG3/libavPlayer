@@ -462,8 +462,14 @@ void stream_pause(VideoState *is)
 		}
 		is->video_current_pts_drift = is->video_current_pts - av_gettime() / 1000000.0;
 	}
+	
 	is->paused = !is->paused;
 	is->step = 0;
+	
+	if (is->paused) 
+		LAVPAudioQueueStop(is);
+	else
+		LAVPAudioQueueStart(is);
 }
 
 void stream_close(VideoState *is)
