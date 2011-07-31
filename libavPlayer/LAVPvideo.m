@@ -182,12 +182,10 @@ void video_refresh_timer(void *opaque)
                     goto retry;
                 }
             }
-			LAVPUnlockMutex(is->pictq_mutex);
 			
             if(is->subtitle_st) {
+				LAVPLockMutex(is->subpq_mutex);
                 if (is->subtitle_stream_changed) {
-                    LAVPLockMutex(is->subpq_mutex);
-					
                     while (is->subpq_size) {
                         free_subpicture(&is->subpq[is->subpq_rindex]);
 						
@@ -200,9 +198,7 @@ void video_refresh_timer(void *opaque)
                     is->subtitle_stream_changed = 0;
 					
                     LAVPCondSignal(is->subpq_cond);
-                    LAVPUnlockMutex(is->subpq_mutex);
                 } else {
-					LAVPLockMutex(is->subpq_mutex);
                     if (is->subpq_size > 0) {
                         sp = &is->subpq[is->subpq_rindex];
 						
@@ -224,14 +220,12 @@ void video_refresh_timer(void *opaque)
                             LAVPCondSignal(is->subpq_cond);
                         }
                     }
-					LAVPUnlockMutex(is->subpq_mutex);
                 }
+				LAVPUnlockMutex(is->subpq_mutex);
             }
 			
             /* display picture */
 			video_display(is);
-			
-            LAVPLockMutex(is->pictq_mutex);
 			
             /* update queue size and signal for next picture */
             if (++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE)
@@ -277,26 +271,27 @@ void alloc_picture(void *opaque)
     VideoState *is = opaque;
     VideoPicture *vp;
 	
+	// for SIMD accelaration: 16bytes alignment //
+	AVFrame *picture = avcodec_alloc_frame();
+	int ret = av_image_alloc(picture->data, picture->linesize, 
+							 is->video_st->codec->width, is->video_st->codec->height, PIX_FMT_YUV420P, 0x10);
+	assert(ret > 0);
+	
+    LAVPLockMutex(is->pictq_mutex);
+	
     vp = &is->pictq[is->pictq_windex];
 	
     if (vp->bmp) {
         avpicture_free((AVPicture*)vp->bmp);
 		av_free(vp->bmp);
-		vp->bmp = NULL;
 	}
 	
     vp->width   = is->video_st->codec->width;
     vp->height  = is->video_st->codec->height;
     vp->pix_fmt = is->video_st->codec->pix_fmt;
-	
-	// for SIMD accelaration: 16bytes alignment //
-	AVFrame *picture = avcodec_alloc_frame();
-	int ret = av_image_alloc(picture->data, picture->linesize, vp->width, vp->height, PIX_FMT_YUV420P, 0x10);
-	assert(ret > 0);
 	vp->bmp = picture;
-	
-    LAVPLockMutex(is->pictq_mutex);
     vp->allocated = 1;
+	
     LAVPCondSignal(is->pictq_cond);
     LAVPUnlockMutex(is->pictq_mutex);
 }
@@ -331,6 +326,8 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos)
         vp->width != is->video_st->codec->width ||
         vp->height != is->video_st->codec->height) {
 		
+        LAVPLockMutex(is->pictq_mutex);
+		
         vp->allocated = 0;
 		
 		id decoder = is->decoder;
@@ -338,7 +335,6 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos)
 		[decoder performSelector:@selector(allocPicture) onThread:thread withObject:nil waitUntilDone:NO];
 		
         /* wait until the picture is allocated */
-        LAVPLockMutex(is->pictq_mutex);
         while (!vp->allocated && !is->videoq.abort_request) {
             LAVPCondWait(is->pictq_cond, is->pictq_mutex);
         }
