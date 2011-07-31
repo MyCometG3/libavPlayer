@@ -48,7 +48,7 @@ void packet_queue_init(PacketQueue *q)
 void packet_queue_flush(PacketQueue *q)
 {
     AVPacketList *pkt, *pkt1;
-
+	
     LAVPLockMutex(q->mutex);
     for(pkt = q->first_pkt; pkt != NULL; pkt = pkt1) {
         pkt1 = pkt->next;
@@ -82,18 +82,18 @@ int packet_queue_put(PacketQueue *q, AVPacket *pkt)
     /* duplicate the packet */
     if (pkt!=&q->flush_pkt && av_dup_packet(pkt) < 0)
         return -1;
-
+	
     pkt1 = av_malloc(sizeof(AVPacketList));
     if (!pkt1)
         return -1;
     pkt1->pkt = *pkt;
     pkt1->next = NULL;
-
-
+	
+	
     LAVPLockMutex(q->mutex);
-
+	
     if (!q->last_pkt)
-
+		
         q->first_pkt = pkt1;
     else
         q->last_pkt->next = pkt1;
@@ -102,7 +102,7 @@ int packet_queue_put(PacketQueue *q, AVPacket *pkt)
     q->size += pkt1->pkt.size + sizeof(*pkt1);
     /* XXX: should duplicate packet data in DV case */
     LAVPCondSignal(q->cond);
-
+	
     LAVPUnlockMutex(q->mutex);
     return 0;
 }
@@ -110,11 +110,11 @@ int packet_queue_put(PacketQueue *q, AVPacket *pkt)
 void packet_queue_abort(PacketQueue *q)
 {
     LAVPLockMutex(q->mutex);
-
+	
     q->abort_request = 1;
-
+	
     LAVPCondSignal(q->cond);
-
+	
     LAVPUnlockMutex(q->mutex);
 }
 
@@ -123,15 +123,15 @@ int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block)
 {
     AVPacketList *pkt1;
     int ret;
-
+	
     LAVPLockMutex(q->mutex);
-
+	
     for(;;) {
         if (q->abort_request) {
             ret = -1;
             break;
         }
-
+		
         pkt1 = q->first_pkt;
         if (pkt1) {
             q->first_pkt = pkt1->next;

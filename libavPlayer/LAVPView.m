@@ -62,7 +62,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
 	CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
 	CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
-
+	
 	CVDisplayLinkStart(displayLink);
 	return CVGetCurrentHostTime();
 }
@@ -269,14 +269,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	size_t rowLength = CVPixelBufferGetBytesPerRow(pb);
 	size_t rowCount = CVPixelBufferGetHeight(pb);
 	{
-	#if 1
+#if 1
 		memset(p, 128, rowLength * rowCount);
-	#else
+#else
 		int row = 0;
 		for (row = 0; row < rowCount; row++) {
 			memset(p + row*rowLength, row & 0xff, rowLength);
 		}
-	#endif
+#endif
 	}
 	CVPixelBufferUnlockBaseAddress(pb, 0);
 #endif

@@ -83,19 +83,19 @@
 	if (self) {
 		// kCAGravity support
 		gravities = [[NSArray arrayWithObjects:
-							  kCAGravityCenter,				//0
-							  kCAGravityTop,				//1
-							  kCAGravityBottom,				//2
-							  kCAGravityLeft,				//3
-							  kCAGravityRight,				//4
-							  kCAGravityTopLeft,			//5
-							  kCAGravityTopRight,			//6
-							  kCAGravityBottomLeft,			//7
-							  kCAGravityBottomRight,		//8
-							  kCAGravityResize,				//9
-							  kCAGravityResizeAspect, 		//10
-							  kCAGravityResizeAspectFill,	//11
-							  nil] retain];
+					  kCAGravityCenter,				//0
+					  kCAGravityTop,				//1
+					  kCAGravityBottom,				//2
+					  kCAGravityLeft,				//3
+					  kCAGravityRight,				//4
+					  kCAGravityTopLeft,			//5
+					  kCAGravityTopRight,			//6
+					  kCAGravityBottomLeft,			//7
+					  kCAGravityBottomRight,		//8
+					  kCAGravityResize,				//9
+					  kCAGravityResizeAspect, 		//10
+					  kCAGravityResizeAspectFill,	//11
+					  nil] retain];
 		
 #if USECUSTOM
 		// FBO Support
@@ -182,7 +182,7 @@
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
 	if (!_stream) return NO;
-
+	
 #if 0
 	return YES;
 #endif
@@ -610,14 +610,14 @@
 	size_t rowLength = CVPixelBufferGetBytesPerRow(pb);
 	size_t rowCount = CVPixelBufferGetHeight(pb);
 	{
-	#if 1
+#if 1
 		memset(p, 128, rowLength * rowCount);
-	#else
+#else
 		int row = 0;
 		for (row = 0; row < rowCount; row++) {
 			memset(p + row*rowLength, row & 0xff, rowLength);
 		}
-	#endif
+#endif
 	}
 	CVPixelBufferUnlockBaseAddress(pb, 0);
 #endif

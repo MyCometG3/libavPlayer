@@ -88,7 +88,7 @@ typedef struct VideoPicture {
     int width, height; /* source height & width */
     int allocated;
     enum PixelFormat pix_fmt;
-
+	
 } VideoPicture;
 
 typedef struct SubPicture {

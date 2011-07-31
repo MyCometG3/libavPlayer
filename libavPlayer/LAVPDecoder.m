@@ -62,7 +62,7 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 			int retry = 100;
 			while(retry--) {
 				usleep(10 * 1000);
-//				if (is->width * is->height) break;
+				//if (is->width * is->height) break;
 				if (is->pictq_size) break;
 			}
 			stream_pause(is);

@@ -37,25 +37,25 @@
 
 #define RGBA_IN(r, g, b, a, s)\
 {\
-    unsigned int v = ((const uint32_t *)(s))[0];\
-    a = (v >> 24) & 0xff;\
-    r = (v >> 16) & 0xff;\
-    g = (v >> 8) & 0xff;\
-    b = v & 0xff;\
+unsigned int v = ((const uint32_t *)(s))[0];\
+a = (v >> 24) & 0xff;\
+r = (v >> 16) & 0xff;\
+g = (v >> 8) & 0xff;\
+b = v & 0xff;\
 }
 
 #define YUVA_IN(y, u, v, a, s, pal)\
 {\
-    unsigned int val = ((const uint32_t *)(pal))[*(const uint8_t*)(s)];\
-    a = (val >> 24) & 0xff;\
-    y = (val >> 16) & 0xff;\
-    u = (val >> 8) & 0xff;\
-    v = val & 0xff;\
+unsigned int val = ((const uint32_t *)(pal))[*(const uint8_t*)(s)];\
+a = (val >> 24) & 0xff;\
+y = (val >> 16) & 0xff;\
+u = (val >> 8) & 0xff;\
+v = val & 0xff;\
 }
 
 #define YUVA_OUT(d, y, u, v, a)\
 {\
-    ((uint32_t *)(d))[0] = (a << 24) | (y << 16) | (u << 8) | v;\
+((uint32_t *)(d))[0] = (a << 24) | (y << 16) | (u << 8) | v;\
 }
 
 #define BPP 1
@@ -72,7 +72,7 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
     const uint8_t *p;
     const uint32_t *pal;
     int dstx, dsty, dstw, dsth;
-
+	
     dstw = av_clip(rect->w, 0, imgw);
     dsth = av_clip(rect->h, 0, imgh);
     dstx = av_clip(rect->x, 0, imgw - dstw);
@@ -80,19 +80,19 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
     lum = dst->data[0] + dsty * dst->linesize[0];
     cb = dst->data[1] + (dsty >> 1) * dst->linesize[1];
     cr = dst->data[2] + (dsty >> 1) * dst->linesize[2];
-
+	
     width2 = ((dstw + 1) >> 1) + (dstx & ~dstw & 1);
     skip2 = dstx >> 1;
     wrap = dst->linesize[0];
     wrap3 = rect->pict.linesize[0];
     p = rect->pict.data[0];
     pal = (const uint32_t *)rect->pict.data[1];  /* Now in YCrCb! */
-
+	
     if (dsty & 1) {
         lum += dstx;
         cb += skip2;
         cr += skip2;
-
+		
         if (dstx & 1) {
             YUVA_IN(y, u, v, a, p, pal);
             lum[0] = ALPHA_BLEND(a, lum[0], y, 0);
@@ -109,7 +109,7 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
             v1 = v;
             a1 = a;
             lum[0] = ALPHA_BLEND(a, lum[0], y, 0);
-
+			
             YUVA_IN(y, u, v, a, p + BPP, pal);
             u1 += u;
             v1 += v;
@@ -139,7 +139,7 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
         lum += dstx;
         cb += skip2;
         cr += skip2;
-
+		
         if (dstx & 1) {
             YUVA_IN(y, u, v, a, p, pal);
             u1 = u;
@@ -166,7 +166,7 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
             v1 = v;
             a1 = a;
             lum[0] = ALPHA_BLEND(a, lum[0], y, 0);
-
+			
             YUVA_IN(y, u, v, a, p + BPP, pal);
             u1 += u;
             v1 += v;
@@ -174,22 +174,22 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
             lum[1] = ALPHA_BLEND(a, lum[1], y, 0);
             p += wrap3;
             lum += wrap;
-
+			
             YUVA_IN(y, u, v, a, p, pal);
             u1 += u;
             v1 += v;
             a1 += a;
             lum[0] = ALPHA_BLEND(a, lum[0], y, 0);
-
+			
             YUVA_IN(y, u, v, a, p + BPP, pal);
             u1 += u;
             v1 += v;
             a1 += a;
             lum[1] = ALPHA_BLEND(a, lum[1], y, 0);
-
+			
             cb[0] = ALPHA_BLEND(a1 >> 2, cb[0], u1, 2);
             cr[0] = ALPHA_BLEND(a1 >> 2, cr[0], v1, 2);
-
+			
             cb++;
             cr++;
             p += -wrap3 + 2 * BPP;
@@ -225,7 +225,7 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
         lum += dstx;
         cb += skip2;
         cr += skip2;
-
+		
         if (dstx & 1) {
             YUVA_IN(y, u, v, a, p, pal);
             lum[0] = ALPHA_BLEND(a, lum[0], y, 0);
@@ -242,7 +242,7 @@ void blend_subrect(AVPicture *dst, const AVSubtitleRect *rect, int imgw, int img
             v1 = v;
             a1 = a;
             lum[0] = ALPHA_BLEND(a, lum[0], y, 0);
-
+			
             YUVA_IN(y, u, v, a, p + BPP, pal);
             u1 += u;
             v1 += v;
@@ -278,7 +278,7 @@ int subtitle_thread(void *arg)
     double pts;
     int i, j;
     int r, g, b, y, u, v, a;
-
+	
     for(;;) {
 		NSAutoreleasePool *pool = [NSAutoreleasePool new];
 		
@@ -301,26 +301,26 @@ int subtitle_thread(void *arg)
             LAVPCondWait(is->subpq_cond, is->subpq_mutex);
         }
         LAVPUnlockMutex(is->subpq_mutex);
-
+		
         if (is->subtitleq.abort_request) {
 			[pool drain];
             goto the_end;
 		}
-
+		
         sp = &is->subpq[is->subpq_windex];
-
-       /* NOTE: ipts is the PTS of the _first_ picture beginning in
-           this packet, if any */
+		
+		/* NOTE: ipts is the PTS of the _first_ picture beginning in
+		 this packet, if any */
         pts = 0;
         if (pkt->pts != AV_NOPTS_VALUE)
             pts = av_q2d(is->subtitle_st->time_base)*pkt->pts;
-
+		
         avcodec_decode_subtitle2(is->subtitle_st->codec,
-                                    &sp->sub, &got_subtitle,
-                                    pkt);
+								 &sp->sub, &got_subtitle,
+								 pkt);
         if (got_subtitle && sp->sub.format == 0) {
             sp->pts = pts;
-
+			
             for (i = 0; i < sp->sub.num_rects; i++)
             {
                 for (j = 0; j < sp->sub.rects[i]->nb_colors; j++)
@@ -332,7 +332,7 @@ int subtitle_thread(void *arg)
                     YUVA_OUT((uint32_t*)sp->sub.rects[i]->pict.data[1] + j, y, u, v, a);
                 }
             }
-
+			
             /* now we can update the picture count */
             if (++is->subpq_windex == SUBPICTURE_QUEUE_SIZE)
                 is->subpq_windex = 0;
@@ -344,7 +344,7 @@ int subtitle_thread(void *arg)
 		
 		[pool drain];
     }
- the_end:
+the_end:
     return 0;
 }
 

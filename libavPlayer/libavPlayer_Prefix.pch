@@ -3,12 +3,12 @@
 //
 
 #ifdef __OBJC__
-    #import <Cocoa/Cocoa.h>
-	#import <CoreVideo/CoreVideo.h>
-	#import <OpenGL/OpenGL.h>
-	#import <QuartzCore/QuartzCore.h>
-	#import <CoreVideo/CoreVideo.h>
-	#import <AudioToolbox/AudioToolbox.h>
+#import <Cocoa/Cocoa.h>
+#import <CoreVideo/CoreVideo.h>
+#import <OpenGL/OpenGL.h>
+#import <QuartzCore/QuartzCore.h>
+#import <CoreVideo/CoreVideo.h>
+#import <AudioToolbox/AudioToolbox.h>
 #endif
 
 //#import <SDL/SDL.h>

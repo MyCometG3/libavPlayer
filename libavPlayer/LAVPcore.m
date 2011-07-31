@@ -112,7 +112,7 @@ int stream_component_open(VideoState *is, int stream_index)
 			memset(&is->audio_pkt, 0, sizeof(is->audio_pkt));
 			
 			packet_queue_init(&is->audioq);
-
+			
 			LAVPAudioQueueStart(is);
 			
 			break;
@@ -259,7 +259,7 @@ int decode_thread(void *arg)
 		stream_component_open(is, st_index[AVMEDIA_TYPE_SUBTITLE]);
 	
 	/* ================================================================================== */
-//NSLog(@"abort_request is %d", is->abort_request);
+	//NSLog(@"abort_request is %d", is->abort_request);
 	
 	// decode loop
 	int eof=0;
@@ -474,11 +474,11 @@ void stream_close(VideoState *is)
 		
 		/* XXX: use a special url_shutdown call to abort parse cleanly */
 		is->abort_request = 1;
-
+		
 		dispatch_group_wait(is->parse_group, DISPATCH_TIME_FOREVER);
 		dispatch_release(is->parse_group);
 		dispatch_release(is->parse_queue);
-
+		
 		//
 		LAVPDestroyMutex(is->pictq_mutex);
 		LAVPDestroyCond(is->pictq_cond);
@@ -559,7 +559,7 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
 	is->parse_queue = dispatch_queue_create("parse", NULL);
 	is->parse_group = dispatch_group_create();
 	dispatch_group_async(is->parse_group, is->parse_queue, ^(void){decode_thread(is);});
-
+	
 	free(path);
 	return is;
 	
