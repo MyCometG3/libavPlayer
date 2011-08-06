@@ -163,6 +163,9 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	if (ret == 1) {
 		return pb;
 	}
+	if (ret == 2) {
+		return pb;
+	}
 	return NULL;
 }
 
@@ -193,6 +196,9 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	
 	if (ret == 1) {
 		*pts = currentpts;
+		return pb;
+	}
+	if (ret == 2) {
 		return pb;
 	}
 	return NULL;

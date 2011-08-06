@@ -38,6 +38,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	self = [super init];
 	if (self) {
 		url = [sourceURL copy];
+		_htOffset = CVGetCurrentHostTime();
 		
 		//
 		decoder = [[LAVPDecoder alloc] initWithURL:url error:errorPtr];

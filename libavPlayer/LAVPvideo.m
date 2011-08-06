@@ -37,8 +37,6 @@
 
 /* =========================================================== */
 
-void video_display(VideoState *is);
-
 double compute_target_time(double frame_current_pts, VideoState *is);
 
 int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos);
@@ -72,14 +70,6 @@ int video_open(VideoState *is){
     is->height = h;
 	
     return 0;
-}
-
-/* display the current picture, if any */
-void video_display(VideoState *is)
-{
-	if (is->width * is->height == 0) {
-		video_open(is);
-	}
 }
 
 /* get the current video clock value */
@@ -144,6 +134,8 @@ void video_refresh_timer(void *opaque)
 	retry:
 		LAVPLockMutex(is->pictq_mutex);
         if (is->pictq_size > 0) {
+			if (is->width * is->height == 0) video_open(is);
+			
             double time= av_gettime()/1000000.0;
             double next_target;
             /* dequeue the picture */
@@ -224,9 +216,6 @@ void video_refresh_timer(void *opaque)
 				LAVPUnlockMutex(is->subpq_mutex);
             }
 			
-            /* display picture */
-			video_display(is);
-			
             /* update queue size and signal for next picture */
             if (++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE)
                 is->pictq_rindex = 0;
@@ -286,6 +275,7 @@ void alloc_picture(void *opaque)
 		av_free(vp->bmp);
 	}
 	
+	vp->pts     = -1;
     vp->width   = is->video_st->codec->width;
     vp->height  = is->video_st->codec->height;
     vp->pix_fmt = is->video_st->codec->pix_fmt;
@@ -587,7 +577,7 @@ int hasImage(void *opaque, double_t targetpts)
 		}
 		
 		if (vp) {
-			if (vp->pts == is->lastPTScopied) goto bail;
+			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
 			
 			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
@@ -655,7 +645,10 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 		if (vp) {
 			int result = 0;
 			
-			if (vp->pts == is->lastPTScopied) goto bail;
+			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) {
+				LAVPUnlockMutex(is->pictq_mutex);
+				return 2;
+			}
 			
 #if ALLOW_GPL_CODE
 			uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
@@ -704,7 +697,7 @@ int hasImageCurrent(void *opaque)
 		int index = is->pictq_rindex;
 		VideoPicture *vp = &is->pictq[index];
 		if(vp) {
-			if (vp->pts == is->lastPTScopied) goto bail;
+			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
 			
 			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
@@ -747,7 +740,10 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 		if (vp) {
 			int result = 0;
 			
-			if (vp->pts == is->lastPTScopied) goto bail;
+			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) {
+				LAVPUnlockMutex(is->pictq_mutex);
+				return 2;
+			}
 			
 #if ALLOW_GPL_CODE
 			uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
