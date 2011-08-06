@@ -378,7 +378,7 @@ void LAVPAudioQueueStop(VideoState *is)
 	//NSLog(@"LAVPAudioQueueStop");
 	
 	OSStatus err = 0;
-	err = AudioQueueStop(is->outAQ, NO);
+	err = AudioQueuePause(is->outAQ);
 	assert(err == 0);
 }
 
