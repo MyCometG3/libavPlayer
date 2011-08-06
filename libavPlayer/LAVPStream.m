@@ -100,14 +100,14 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	return [decoder readyForPTS:position];
 }
 
-- (CVPixelBufferRef) getCVPixelBufferForCurrent
+- (CVPixelBufferRef) getCVPixelBufferForCurrentAsPTS:(double_t *)pts;
 {
-	double pts = -1.0;
-	CVPixelBufferRef pb = [decoder getPixelBufferForCurrent:&pts];
+	*pts = -1.0;
+	CVPixelBufferRef pb = [decoder getPixelBufferForCurrent:pts];
 	return pb;
 }
 
-- (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts
+- (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 {
 	int64_t	duration = [decoder duration];
 	uint64_t htDiff = ts->hostTime - _htOffset;
@@ -118,6 +118,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	position = (position > duration ? duration : position);
 	
 	CVPixelBufferRef pb = [decoder getPixelBufferForPTS:position];
+	*pts = position;
 	return pb;
 }
 

@@ -133,6 +133,7 @@
 		//[self setCVPixelBuffer:NULL];
 		
 		lock = [[NSLock alloc] init];
+		lastPTS = -1;
 		
 		// Turn on VBL syncing for swaps
 		self.asynchronous = YES;
@@ -208,12 +209,20 @@
 	// Prepare CIImage
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
 		CVPixelBufferRef pb;
+		double_t pts;
+		
 		if (!timeStamp) 
-			pb = [_stream getCVPixelBufferForCurrent];
+			pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
 		else
-			pb = [_stream getCVPixelBufferForTime:timeStamp];
-		if (pb) 
+			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
+		if (pb) {
+			if (lastPTS == pts) {
+				return;
+			}
+			lastPTS = pts;
+			
 			[self setCVPixelBuffer:pb];
+		}
 	}
 	
 	// Update texture and draw quad

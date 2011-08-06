@@ -50,8 +50,17 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 									  CVOptionFlags* flagsOut, 
 									  void* displayLinkContext)
 {
+	CVReturn result = kCVReturnError;
+	
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	CVReturn result = [(LAVPView*)displayLinkContext getFrameForTime:outputTime];
+	
+	LAVPView* obj = (LAVPView*)displayLinkContext;
+	double_t lastPTS = obj->lastPTS;
+	double_t rate = [obj->_stream rate];
+	
+	if (lastPTS < 0 || rate) 
+		result = [obj getFrameForTime:outputTime];
+	
 	[pool drain];
 	
 	return result;
@@ -118,6 +127,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, self);
 		
 		lock = [[NSLock alloc] init];
+		lastPTS = -1;
 		
 		[self startCVDisplayLink];
 	}
@@ -128,8 +138,16 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 - (CVReturn)getFrameForTime:(const CVTimeStamp*)ts
 {
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
-		CVPixelBufferRef pb = [_stream getCVPixelBufferForTime:ts];
+		CVPixelBufferRef pb;
+		double_t pts;
+		
+		pb = [_stream getCVPixelBufferForTime:ts asPTS:&pts];
 		if (pb) {
+			if (lastPTS == pts) {
+				return kCVReturnError;
+			}
+			lastPTS = pts;
+			
 			[self setCVPixelBuffer:pb];
 			
 			// Update Image

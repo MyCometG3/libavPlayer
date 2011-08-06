@@ -36,6 +36,8 @@
 	CVDisplayLinkRef displayLink;
 	
 	NSLock *lock;
+	
+	double_t lastPTS;
 }
 
 @property (assign) BOOL expandToFit;

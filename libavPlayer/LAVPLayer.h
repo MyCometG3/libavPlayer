@@ -45,6 +45,8 @@
 	NSArray *gravities;
 	
 	NSLock *lock;
+	
+	double_t lastPTS;
 }
 
 @property (retain) LAVPStream *stream;

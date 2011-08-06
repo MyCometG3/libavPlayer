@@ -46,8 +46,8 @@ extern NSString * const LAVPStreamDidEndNotification;
 - (NSSize) frameSize;
 - (BOOL) readyForCurrent;
 - (BOOL) readyForTime:(const CVTimeStamp*)ts;
-- (CVPixelBufferRef) getCVPixelBufferForCurrent;
-- (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts;
+- (CVPixelBufferRef) getCVPixelBufferForCurrentAsPTS:(double_t *)pts;
+- (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 
 - (double_t) duration;
 - (double_t) position;
