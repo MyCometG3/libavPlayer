@@ -36,6 +36,7 @@
 		164826C013D399A2008E16A7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 164826BB13D39785008E16A7 /* AudioToolbox.framework */; };
 		166F893813E0555A00B74CCA /* LAVPthread.c in Sources */ = {isa = PBXBuildFile; fileRef = 166F893613E0555A00B74CCA /* LAVPthread.c */; };
 		166F893913E0555A00B74CCA /* LAVPthread.h in Headers */ = {isa = PBXBuildFile; fileRef = 166F893713E0555A00B74CCA /* LAVPthread.h */; };
+		169D704313EE2A5700031A4A /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 169D704213EE2A5700031A4A /* QTKit.framework */; };
 		16A18F4913AC466F008825FF /* LAVPStream.h in Headers */ = {isa = PBXBuildFile; fileRef = 16A18F4713AC466F008825FF /* LAVPStream.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		16A18F4A13AC466F008825FF /* LAVPStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 16A18F4813AC466F008825FF /* LAVPStream.m */; };
 		16A18FAC13AC567E008825FF /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A18FAB13AC567E008825FF /* CoreVideo.framework */; };
@@ -94,6 +95,7 @@
 		164826BB13D39785008E16A7 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		166F893613E0555A00B74CCA /* LAVPthread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = LAVPthread.c; sourceTree = "<group>"; };
 		166F893713E0555A00B74CCA /* LAVPthread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPthread.h; sourceTree = "<group>"; };
+		169D704213EE2A5700031A4A /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = System/Library/Frameworks/QTKit.framework; sourceTree = SDKROOT; };
 		16A18F4713AC466F008825FF /* LAVPStream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPStream.h; sourceTree = "<group>"; };
 		16A18F4813AC466F008825FF /* LAVPStream.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LAVPStream.m; sourceTree = "<group>"; };
 		16A18F8A13AC5536008825FF /* libavcodec.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libavcodec.a; path = libav/libavcodec.a; sourceTree = "<group>"; };
@@ -151,6 +153,7 @@
 				16A1969C13ADFA01008825FF /* libswscale.a in Frameworks */,
 				16E3B23213BA752C000E6062 /* Cocoa.framework in Frameworks */,
 				164826C013D399A2008E16A7 /* AudioToolbox.framework in Frameworks */,
+				169D704313EE2A5700031A4A /* QTKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,6 +218,7 @@
 		1058C7B0FEA5585E11CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				169D704213EE2A5700031A4A /* QTKit.framework */,
 				16A196F813ADFDC1008825FF /* Cocoa.framework */,
 				16A1955A13ADF58D008825FF /* QuartzCore.framework */,
 				16A18FAB13AC567E008825FF /* CoreVideo.framework */,
