@@ -103,6 +103,8 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	while ( self.abort != YES ) {
 		NSAutoreleasePool *p = [NSAutoreleasePool new];
 		
+		//NSLog(@"pos = %04.3f (sec)", [self position]/1.0e6);
+		
 		[runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
 		
 		[p drain];
@@ -237,6 +239,8 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 
 - (void) setRate:(CGFloat)rate
 {
+	/* note: only accept 0 or 1 yet */
+	
 	if (rate > 0) {
 		[self play];
 	} else {
@@ -246,9 +250,8 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 
 - (int64_t) duration
 {
-	// returned duration is in AV_TIME_BASE value.
+	// duration is in AV_TIME_BASE value.
 	// avutil.h defines timebase for AVFormatContext - in usec.
-	//#define AV_TIME_BASE            1000000
 	
 	if (is && is->ic) {
 		return is->ic->duration;
@@ -258,25 +261,33 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 
 - (int64_t) position
 {
-	int64_t ts = 0;
+	// position is in AV_TIME_BASE value.
+	// avutil.h defines timebase for AVFormatContext - in usec.
+	
 	if (is && is->ic) {
-		ts = get_master_clock(is);
-		return ts;
+		return get_master_clock(is) * 1e6;
 	}
 	return 0;
 }
 
 - (int64_t) setPosition:(int64_t)pos
 {
-	// clipping
-	int64_t ts = FFMIN(is->ic->duration , FFMAX(0, pos));
+	// position is in AV_TIME_BASE value.
+	// avutil.h defines timebase for AVFormatContext - in usec.
 	
-	if (is->ic->start_time != AV_NOPTS_VALUE)
-		ts += is->ic->start_time;
+	/* note: this is performed asynchronously */
 	
-	stream_seek(is, ts, 0, 0);
-	return ts;
+	if (is && is->ic) {
+		int64_t ts = FFMIN(is->ic->duration , FFMAX(0, pos));
+		
+		if (is->ic->start_time != AV_NOPTS_VALUE)
+			ts += is->ic->start_time;
+		
+		stream_seek(is, ts, 0, 0);
+		
+		return ts;
+	}
+	return 0;
 }
-
 
 @end

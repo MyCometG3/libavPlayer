@@ -24,6 +24,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
+#import <QTKit/QTTime.h>
 
 extern NSString * const LAVPStreamDidEndNotification;
 
@@ -49,7 +50,9 @@ extern NSString * const LAVPStreamDidEndNotification;
 - (CVPixelBufferRef) getCVPixelBufferForCurrentAsPTS:(double_t *)pts;
 - (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 
-- (double_t) duration;
+- (QTTime) duration;
+- (QTTime) currentTime;
+- (void) setCurrentTime:(QTTime)newTime;
 - (double_t) position;
 - (void) setPosition:(double_t)newPosition;
 - (double_t) rate;
@@ -63,13 +66,8 @@ extern NSString * const LAVPStreamDidEndNotification;
 
 #if 0
 @interface LAVStream (control)
-- (void) setCurrentTime:(QTTime)newTime;
 - (void) stepForward;
 - (void) stepBackward;
-- (QTTime) duration;
-- (QTTime) currentTime;
-- (float) rate;
-- (void) setRate:(float)rate;
 - (float) volume;
 - (void) setVolume:(float)volume;
 - (BOOL) muted;

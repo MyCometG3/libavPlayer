@@ -122,21 +122,33 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	return pb;
 }
 
-- (double_t) duration
+- (QTTime) duration;
 {
-	// returns total movie duratino in sec
-	int64_t	duration = [decoder duration];
+	int64_t	duration = [decoder duration];	//usec
 	
-	return (double_t)duration / AV_TIME_BASE;
+	return QTMakeTime(duration, AV_TIME_BASE);
+}
+
+- (QTTime) currentTime
+{
+	int64_t position = [decoder position];	//usec
+	
+	return QTMakeTime(position, AV_TIME_BASE);
+}
+
+- (void) setCurrentTime:(QTTime)newTime
+{
+	QTTime timeInUsec = QTMakeTimeScaled(newTime, AV_TIME_BASE);
+	
+	[decoder setPosition:timeInUsec.timeValue];
 }
 
 - (double_t) position
 {
-	// LACPStream uses double value between 0.0 and 1.0
-	// LAVPDecoder uses integer position / duration in AVFormatContext
+	// position uses double value between 0.0 and 1.0
 	
-	int64_t position = [decoder position];
-	int64_t	duration = [decoder duration];
+	int64_t position = [decoder position];	//usec
+	int64_t	duration = [decoder duration];	//usec
 	
 	// check if no duration
 	if (duration == 0) return 0;
@@ -151,8 +163,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void) setPosition:(double_t)newPosition
 {
-	// LACPStream uses double value between 0.0 and 1.0
-	// LAVPDecoder uses integer position / duration in AVFormatContext
+	// position uses double value between 0.0 and 1.0
 	
 	int64_t	duration = [decoder duration];
 	
