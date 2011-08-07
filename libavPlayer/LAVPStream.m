@@ -97,6 +97,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	position = (position < 0 ? 0 : position);
 	position = (position > duration ? duration : position);
 	
+	//
 	return [decoder readyForPTS:position];
 }
 
@@ -117,8 +118,9 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	position = (position < 0 ? 0 : position);
 	position = (position > duration ? duration : position);
 	
+	//
 	CVPixelBufferRef pb = [decoder getPixelBufferForPTS:position];
-	*pts = position;
+	if (pb) *pts = position;
 	return pb;
 }
 
@@ -165,7 +167,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 {
 	// position uses double value between 0.0 and 1.0
 	
-	int64_t	duration = [decoder duration];
+	int64_t	duration = [decoder duration];	//usec
 	
 	// clipping
 	newPosition = (newPosition<0.0 ? 0.0 : newPosition);
@@ -182,11 +184,16 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void) setRate:(double_t) newRate
 {
+	// FIXME: only support 0.0 or 1.0 for now
+	newRate = newRate != 0.0 ? 1.0 : 0.0;
+	
+	// stop notificatino timer
 	if (timer) {
 		[timer invalidate];
 		timer = nil;
 	}
 	
+	// pause first
 	if (newRate == 0.0) [decoder stop];
 	
 	// current host time
@@ -198,9 +205,9 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	_posOffset = (double_t)position/duration;
 	
 	if (newRate != 0.0) {
-		[decoder play];
+		[decoder play];	// FIXME
 		
-		//
+		// setup notification timer
 		double_t remain=1;
 		if (newRate > 0.0) {
 			remain = (double_t)(duration - position)/duration * AV_TIME_BASE;
@@ -220,8 +227,10 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void)movieFinished
 {
+	// Ensure stream to pause
 	[self stop];
 	
+	// Post notification
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidEndNotification
 																 object:self];

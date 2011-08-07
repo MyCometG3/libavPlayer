@@ -62,7 +62,7 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 			int retry = 100;
 			while(retry--) {
 				usleep(10 * 1000);
-				//if (is->width * is->height) break;
+				
 				if (is->pictq_size) break;
 			}
 			stream_pause(is);
@@ -141,6 +141,8 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 
 - (BOOL) readyForPTS:(double_t)pts
 {
+	// pts is in sec.
+	
 	if (hasImage(is, pts)) {
 		return YES;
 	}
@@ -149,11 +151,13 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 
 - (CVPixelBufferRef) getPixelBufferForPTS:(double_t)pts
 {
+	// pts is in sec.
+	
 	if (!pb) {
 		pb = [self createDummyCVPixelBufferWithSize:NSMakeSize(is->width, is->height)];
 	}
 	
-	/* Get current buffer for pts */
+	// Get current buffer for pts
 	CVPixelBufferLockBaseAddress(pb, 0);
 	
 	uint8_t* data = CVPixelBufferGetBaseAddress(pb);
@@ -162,10 +166,10 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	
 	CVPixelBufferUnlockBaseAddress(pb, 0);
 	
+	//
 	if (ret == 1) {
 		return pb;
-	}
-	if (ret == 2) {
+	} else if (ret == 2) {
 		return pb;
 	}
 	return NULL;
@@ -181,13 +185,15 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 
 - (CVPixelBufferRef) getPixelBufferForCurrent:(double_t*)pts
 {
+	// returned pts is in sec.
+	
 	if (!pb) {
 		pb = [self createDummyCVPixelBufferWithSize:NSMakeSize(is->width, is->height)];
 	}
 	
 	double_t currentpts=0.0;
 	
-	/* Get current buffer for pts */
+	// Get current buffer for now
 	CVPixelBufferLockBaseAddress(pb, 0);
 	
 	uint8_t* data = CVPixelBufferGetBaseAddress(pb);
@@ -196,11 +202,11 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 	
 	CVPixelBufferUnlockBaseAddress(pb, 0);
 	
+	//
 	if (ret == 1) {
 		*pts = currentpts;
 		return pb;
-	}
-	if (ret == 2) {
+	} else if (ret == 2) {
 		return pb;
 	}
 	return NULL;
