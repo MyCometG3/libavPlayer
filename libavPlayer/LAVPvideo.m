@@ -145,7 +145,7 @@ void video_refresh_timer(void *opaque)
 				LAVPUnlockMutex(is->pictq_mutex);
                 return;
 			}
-			if (is->pictq_size == 1 ) {
+			if (is->pictq_size == 1 && vp->target_clock != 0) {
 				LAVPUnlockMutex(is->pictq_mutex);
 				return;
 			}
