@@ -15,8 +15,8 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
 //	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test" withExtension:@"mp4"];
-	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
-//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
+//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
+	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
 	
 #if 1
 	
@@ -104,6 +104,12 @@
 	if ([stream rate]) {
 		[stream stop];
 	} else {
+		QTTime currentTime = [stream currentTime];
+		QTTime duration = [stream duration];
+		if (currentTime.timeValue >= duration.timeValue) {
+			[stream gotoBeggining];
+		}
+		
 		[stream play];
 	}
 }
@@ -113,6 +119,12 @@
 	if ([layerstream rate]) {
 		[layerstream stop];
 	} else {
+		QTTime currentTime = [layerstream currentTime];
+		QTTime duration = [layerstream duration];
+		if (currentTime.timeValue >= duration.timeValue) {
+			[layerstream gotoBeggining];
+		}
+		
 		[layerstream play];
 	}
 	[layer setNeedsDisplay];
