@@ -179,19 +179,15 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (double_t) rate
 {
-	return _rate;
+	double_t rate = [decoder rate];
+	return rate;
 }
 
 - (void) setRate:(double_t) newRate
 {
-	// FIXME: only support 0.0 or 1.0 for now
-	newRate = newRate != 0.0 ? 1.0 : 0.0;
-	
 	// stop notificatino timer
-	if (timer) {
-		[timer invalidate];
-		timer = nil;
-	}
+	[timer invalidate];
+	timer = nil;
 	
 	// pause first
 	if (newRate == 0.0) [decoder stop];
@@ -205,28 +201,29 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	_posOffset = (double_t)position/duration;
 	
 	if (newRate != 0.0) {
-		[decoder play];	// FIXME
+		[decoder setRate:newRate];
 		
 		// setup notification timer
-		double_t remain=1;
+		double_t remain;
 		if (newRate > 0.0) {
-			remain = (double_t)(duration - position)/duration * AV_TIME_BASE;
-		} else if (_rate < 0.0) {
-			remain = (double_t)position/duration * AV_TIME_BASE;
+			remain = (double_t)(duration - position) / AV_TIME_BASE;
+		} else if (newRate < 0.0) {
+			remain = (double_t)position / AV_TIME_BASE;
 		}
-		timer = [NSTimer scheduledTimerWithTimeInterval:remain 
+		timer = [NSTimer scheduledTimerWithTimeInterval:remain + 0.1
 												 target:self 
 											   selector:@selector(movieFinished) 
 											   userInfo:nil 
 												repeats:NO];
 	}
-	
-	// update rate
-	_rate = newRate;
 }
 
 - (void)movieFinished
 {
+	// stop notificatino timer
+	[timer invalidate];
+	timer = nil;
+	
 	// Ensure stream to pause
 	[self stop];
 	
