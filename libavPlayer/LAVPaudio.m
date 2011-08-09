@@ -333,7 +333,7 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 		//
 		OSStatus err = 0;
 		AudioQueueRef outAQ = NULL;
-		is->audioDispatchQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+		is->audioDispatchQueue = dispatch_queue_create(NULL, NULL);
 #if 1
 		void (^inCallbackBlock)(AudioQueueRef, AudioQueueBufferRef) = ^(AudioQueueRef inAQ, AudioQueueBufferRef inBuffer) 
 		{
@@ -392,4 +392,7 @@ void LAVPAudioQueueDealloc(VideoState *is)
 	assert(err == 0);
 	
 	is->outAQ = NULL;
+	
+	dispatch_release(is->audioDispatchQueue);
+	is->audioDispatchQueue = NULL;
 }
