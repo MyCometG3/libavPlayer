@@ -214,7 +214,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 		[decoder setRate:newRate];
 		
 		// setup notification timer
-		double_t remain;
+		double_t remain = 0.0;
 		if (newRate > 0.0) {
 			remain = (double_t)(duration - position) / AV_TIME_BASE;
 		} else if (newRate < 0.0) {
