@@ -10,21 +10,19 @@
 #import <libavPlayer/libavPlayer.h>
 
 @interface LAVPTestAppDelegate : NSObject <NSApplicationDelegate> {
-    NSWindow *window;
-	IBOutlet LAVPView *lavpView;
-	LAVPStream *stream;
+    IBOutlet NSWindow *viewwindow;
+	IBOutlet LAVPView *view;
+	LAVPStream *viewstream;
 	
-	NSWindow *layerwindow;
+	IBOutlet NSWindow *layerwindow;
 	LAVPLayer *layer;
 	LAVPStream *layerstream;
 }
 
-@property (assign) IBOutlet NSWindow *window;
+@property (assign) IBOutlet NSWindow *viewwindow;
 @property (assign) IBOutlet NSWindow *layerwindow;
 
-
-- (IBAction) togglePlay:(id)sender;
-
+- (IBAction) togglePlayView:(id)sender;
 - (IBAction) togglePlayLayer:(id)sender;
 
 @end

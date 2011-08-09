@@ -10,40 +10,50 @@
 
 @implementation LAVPTestAppDelegate
 
-@synthesize window;
+@synthesize viewwindow;
 @synthesize layerwindow;
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
 //	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test" withExtension:@"mp4"];
-//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
-	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
+	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
+//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
 	
 #if 1
+	// LAVPView test
+	viewstream = [[LAVPStream streamWithURL:url error:nil] retain];
 	
+	[view setExpandToFit:YES];
+	
+	//
+	[view setStream:viewstream];
+	
+	//	[view setNeedsDisplay:YES];
+	//	[stream gotoBeggining];
+#endif
+	
+#if 1
 	// LAVPLayer test
-	
 	layerstream =  [[LAVPStream streamWithURL:url error:nil] retain];
-	
-	//while ( NSEqualSizes([layerstream frameSize], NSZeroSize) ) {
-	//	[NSThread sleepForTimeInterval:0.01];
-	//}
-	//NSLog(@"size = %@", NSStringFromSize([layerstream frameSize]));
 	
 	//
 	[[layerwindow contentView] setWantsLayer:YES];
 	CALayer *contentLayer = [[layerwindow contentView] layer];
 	
+	//
 	CALayer *rootLayer;
-//	rootLayer = [CALayer new];
-//	rootLayer.bounds = contentLayer.bounds;
-//	rootLayer.frame = contentLayer.frame;
-//	rootLayer.position = CGPointMake(contentLayer.bounds.size.width/2.0, contentLayer.bounds.size.height/2.0);
-//	rootLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-//	
-//	contentLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
-//	contentLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-//	[contentLayer addSublayer:rootLayer];
+#if 1
 	rootLayer = contentLayer;
+#else
+	rootLayer = [CALayer new];
+	rootLayer.bounds = contentLayer.bounds;
+	rootLayer.frame = contentLayer.frame;
+	rootLayer.position = CGPointMake(contentLayer.bounds.size.width/2.0, contentLayer.bounds.size.height/2.0);
+	rootLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+	
+	contentLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
+	contentLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+	[contentLayer addSublayer:rootLayer];
+#endif
 	
 	//
 	layer = [LAVPLayer layer];
@@ -66,51 +76,53 @@
 //	layer.position = rootLayer.position;
 	layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
 	layer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
-//	layer.asynchronous = YES;
 	
+	//
 	[layer setStream:layerstream];
 	[rootLayer addSublayer:layer];
 	
-	//
-	[layer performSelector:@selector(setNeedsDisplay) withObject:self afterDelay:0.5];
 //	[layer setNeedsDisplay];
 //	[layerstream gotoBeggining];
-//	[layerstream stop];
-#endif
-
-#if 1
-	// LAVPView test
-	
-	stream = [[LAVPStream streamWithURL:url error:nil] retain];
-	
-	//while ( NSEqualSizes([stream frameSize], NSZeroSize) ) {
-	//	[NSThread sleepForTimeInterval:0.01];
-	//}
-	//NSLog(@"size = %@", NSStringFromSize([stream frameSize]));
-	
-	[lavpView setStream:stream];
-	[lavpView setExpandToFit:YES];
-	
-	//
-	[lavpView setNeedsDisplay:YES];
-//	[stream gotoBeggining];
-//	[stream stop];
 #endif
 
 }
 
-- (IBAction) togglePlay:(id)sender
+- (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
 {
-	if ([stream rate]) {
-		[stream stop];
+	return YES;
+}
+
+- (void) windowWillClose:(NSNotification *)notification
+{
+	NSWindow *obj = [notification object];
+	if (obj == layerwindow) {
+		NSLog(@"layerwindow closed.");
+		[layerstream stop];
+		[layer setStream:nil];
+		[layerstream release];
+		layerstream = nil;
+	}
+	if (obj == viewwindow) {
+		NSLog(@"viewwindow closed.");
+		[viewstream stop];
+		[view setStream:nil];
+		[viewstream release];
+		viewstream = nil;
+	}
+}
+
+- (IBAction) togglePlayView:(id)sender
+{
+	if ([viewstream rate]) {
+		[viewstream stop];
 	} else {
-		QTTime currentTime = [stream currentTime];
-		QTTime duration = [stream duration];
+		QTTime currentTime = [viewstream currentTime];
+		QTTime duration = [viewstream duration];
 		if (currentTime.timeValue >= duration.timeValue) {
-			[stream gotoBeggining];
+			[viewstream gotoBeggining];
 		}
 		
-		[stream play];
+		[viewstream play];
 	}
 }
 
