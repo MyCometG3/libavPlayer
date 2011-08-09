@@ -167,6 +167,8 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 {
 	// position uses double value between 0.0 and 1.0
 	
+	NSLog(@"seek start");
+	
 	int64_t	duration = [decoder duration];	//usec
 	
 	// clipping
@@ -178,9 +180,11 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	
 	if ([decoder rate] == 0.0) {
 		[decoder setRate:1.0];
-		usleep(10*1000);
+		usleep(1000/60*1000);	// Wait for 1/60 sec
 		[decoder setRate:0.0];
 	}
+	
+	NSLog(@"seek finished");
 }
 
 - (double_t) rate

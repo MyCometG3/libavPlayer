@@ -247,7 +247,8 @@ int audio_decode_frame(VideoState *is, double *pts_ptr)
 		
         /* if update the audio clock with the pts */
         if (pkt->pts != AV_NOPTS_VALUE) {
-            is->audio_clock = av_q2d(is->audio_st->time_base)*pkt->pts;
+			//NSLog(@"GET : pkt->pts = %8lld, size = %8d, pos = %8lld GET___", pkt->pts, pkt->size, pkt->pos);
+			is->audio_clock = av_q2d(is->audio_st->time_base)*pkt->pts;
         }
     }
 }
@@ -364,7 +365,7 @@ void LAVPAudioQueueStart(VideoState *is)
 	//NSLog(@"LAVPAudioQueueStart");
 	
 	OSStatus err = 0;
-	UInt32 inNumberOfFramesToPrepare = is->asbd.mSampleRate/5;	// Prepare for 0.2 sec
+	UInt32 inNumberOfFramesToPrepare = is->asbd.mSampleRate / 60;	// Prepare for 1/60 sec
 	err = AudioQueuePrime(is->outAQ, inNumberOfFramesToPrepare, 0);
 	assert(err == 0);
 	

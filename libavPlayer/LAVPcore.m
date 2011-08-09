@@ -305,15 +305,17 @@ int decode_thread(void *arg)
 			if (ret < 0) {
 				fprintf(stderr, "%s: error while seeking\n", is->ic->filename);
 			}else{
-				if (is->audio_stream > 0) {
+				if (is->audio_stream >= 0) {
+					LAVPAudioQueueStop(is);
 					packet_queue_flush(&is->audioq);
 					packet_queue_put(&is->audioq, NULL);
+					LAVPAudioQueueStart(is);
 				}
-				if (is->subtitle_stream > 0) {
+				if (is->subtitle_stream >= 0) {
 					packet_queue_flush(&is->subtitleq);
 					packet_queue_put(&is->subtitleq, NULL);
 				}
-				if (is->video_stream > 0) {
+				if (is->video_stream >= 0) {
 					packet_queue_flush(&is->videoq);
 					packet_queue_put(&is->videoq, NULL);
 				}
@@ -345,6 +347,7 @@ int decode_thread(void *arg)
 			}
 			usleep(10*1000);
 			if(is->audioq.size + is->videoq.size + is->subtitleq.size ==0){
+				//NSLog(@"End of packet detected.");
 				if (is->loop > 1) {
 					is->loop--;
 					stream_seek(is, 0, 0, 0);
@@ -372,6 +375,7 @@ int decode_thread(void *arg)
 		// Queue packet
 		if (pkt->stream_index == is->audio_stream) {
 			packet_queue_put(&is->audioq, pkt);
+			//NSLog(@"PUT : pkt->pts = %8lld, size = %8d, pos = %8lld ___PUT", pkt->pts, pkt->size, pkt->pos);
 		} else if (pkt->stream_index == is->video_stream) {
 			packet_queue_put(&is->videoq, pkt);
 		} else if (pkt->stream_index == is->subtitle_stream) {
@@ -470,6 +474,8 @@ void stream_pause(VideoState *is)
 		LAVPAudioQueueStop(is);
 	else
 		LAVPAudioQueueStart(is);
+	
+	NSLog(@"stream_pause = %s at %3.3f", (is->paused ? "paused" : "play"), get_master_clock(is));
 }
 
 void stream_close(VideoState *is)
@@ -529,6 +535,9 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
 	is->paused = 0;
 	//is->step = 1;
 	//is->av_sync_type = AV_SYNC_VIDEO_MASTER;
+	is->audio_stream = -1;
+	is->video_stream = -1;
+	is->subtitle_stream = -1;
 	
 	// Prepare libav* contexts
 	av_log_set_flags(AV_LOG_SKIP_REPEATED);
