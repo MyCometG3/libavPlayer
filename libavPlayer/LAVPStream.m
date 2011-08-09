@@ -176,12 +176,10 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	// 
 	[decoder setPosition:newPosition*duration];
 	
-	// wait till seek begin
-	int64_t prevPos = [decoder position];	//usec
-	int i = 100;	// wait limit = 1 sec
-	while (i-- > 0) {
-		if ([decoder position] != prevPos) break;
-		usleep(10*1000);	// 0.01sec
+	if ([decoder rate] == 0.0) {
+		[decoder setRate:1.0];
+		usleep(10*1000);
+		[decoder setRate:0.0];
 	}
 }
 
