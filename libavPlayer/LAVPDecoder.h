@@ -55,4 +55,6 @@
 - (int64_t) duration;
 - (int64_t) position;
 - (int64_t) setPosition:(int64_t)pos;
+- (Float32) volume;
+- (void) setVolume:(Float32)volume;
 @end

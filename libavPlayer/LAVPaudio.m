@@ -396,3 +396,17 @@ void LAVPAudioQueueDealloc(VideoState *is)
 	dispatch_release(is->audioDispatchQueue);
 	is->audioDispatchQueue = NULL;
 }
+
+AudioQueueParameterValue getVolume(VideoState *is)
+{
+	AudioQueueParameterValue volume;
+	OSStatus err = AudioQueueGetParameter(is->outAQ, kAudioQueueParam_Volume, &volume);
+	assert(!err);
+	return volume;
+}
+
+void setVolume(VideoState *is, AudioQueueParameterValue volume)
+{
+	OSStatus err = AudioQueueSetParameter(is->outAQ, kAudioQueueParam_Volume, volume);
+	assert(!err);
+}

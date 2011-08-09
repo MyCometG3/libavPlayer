@@ -264,4 +264,14 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	[self setPosition:1.0];
 }
 
+- (Float32) volume
+{
+	return [decoder volume];
+}
+
+- (void) setVolume:(Float32)volume
+{
+	[decoder setVolume:volume];
+}
+
 @end

@@ -61,6 +61,8 @@ extern NSString * const LAVPStreamDidEndNotification;
 - (void) stop;
 - (void) gotoBeggining;
 - (void) gotoEnd;
+- (Float32) volume;
+- (void) setVolume:(Float32)volume;
 
 @end
 
@@ -68,8 +70,6 @@ extern NSString * const LAVPStreamDidEndNotification;
 @interface LAVStream (control)
 - (void) stepForward;
 - (void) stepBackward;
-- (float) volume;
-- (void) setVolume:(float)volume;
 - (BOOL) muted;
 - (void) setMuted:(BOOL)muted;
 @end

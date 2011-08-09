@@ -36,6 +36,8 @@ extern int hasImage(void *opaque, double_t targetpts);
 extern int copyImage(void *opaque, double_t targetpts, uint8_t* data, const int pitch) ;
 extern int hasImageCurrent(void *opaque);
 extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch) ;
+extern AudioQueueParameterValue getVolume(VideoState *is);
+extern void setVolume(VideoState *is, AudioQueueParameterValue volume);
 
 #pragma mark -
 
@@ -294,6 +296,23 @@ extern int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, in
 		return ts;
 	}
 	return 0;
+}
+
+- (Float32) volume
+{
+	Float32 volume = 0.0;
+	if (is) {
+		volume = getVolume(is);
+	}
+	return volume;
+}
+
+- (void) setVolume:(Float32)volume
+{
+	AudioQueueParameterValue newVolume = volume;
+	if (is) {
+		setVolume(is, newVolume);
+	}
 }
 
 @end
