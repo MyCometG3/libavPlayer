@@ -473,7 +473,7 @@ void stream_pause(VideoState *is)
 	is->step = 0;
 	
 	if (is->paused) 
-		LAVPAudioQueueStop(is);
+		LAVPAudioQueuePause(is);
 	else
 		LAVPAudioQueueStart(is);
 	
