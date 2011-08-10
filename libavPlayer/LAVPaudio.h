@@ -33,6 +33,7 @@ double get_audio_clock(VideoState *is);
 
 void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx);
 void LAVPAudioQueueStart(VideoState *is);
+void LAVPAudioQueuePause(VideoState *is);
 void LAVPAudioQueueStop(VideoState *is);
 void LAVPAudioQueueDealloc(VideoState *is);
 AudioQueueParameterValue getVolume(VideoState *is);

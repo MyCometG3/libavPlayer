@@ -36,5 +36,7 @@ void stream_pause(VideoState *is);
 
 void stream_close(VideoState *is);
 VideoState* stream_open(id opaque, NSURL *sourceURL);
+double_t stream_playRate(VideoState *is);
+void stream_setPlayRate(VideoState *is, double_t newRate);
 
 #endif

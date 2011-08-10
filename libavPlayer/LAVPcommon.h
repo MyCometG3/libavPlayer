@@ -116,6 +116,8 @@ typedef struct VideoState {
     double external_clock; /* external clock base */
     int64_t external_clock_time;
 	
+	double_t playRate;
+	
 	int step;
     int seek_req;
     int seek_flags;

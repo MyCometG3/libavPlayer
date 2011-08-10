@@ -48,8 +48,6 @@
 - (CVPixelBufferRef) getPixelBufferForCurrent:(double_t*)pts;
 - (NSSize) frameSize;
 
-- (void) play;
-- (void) stop;
 - (CGFloat) rate;
 - (void) setRate:(CGFloat)rate;
 - (int64_t) duration;

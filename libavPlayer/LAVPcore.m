@@ -538,6 +538,7 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
 	is->audio_stream = -1;
 	is->video_stream = -1;
 	is->subtitle_stream = -1;
+	is->playRate = 1.0;
 	
 	// Prepare libav* contexts
 	av_log_set_flags(AV_LOG_SKIP_REPEATED);
@@ -582,4 +583,16 @@ bail:
 	fprintf(stderr, "err = %d\n", err);
 	free(path);
 	return NULL;
+}
+
+double_t stream_playRate(VideoState *is)
+{
+	return is->playRate;
+}
+
+void stream_setPlayRate(VideoState *is, double_t newRate)
+{
+	assert(newRate > 0.0 && newRate <= 4.0);
+	
+	is->playRate = newRate;
 }

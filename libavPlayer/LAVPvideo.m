@@ -114,7 +114,7 @@ double compute_target_time(double frame_current_pts, VideoState *is)
                 delay = 2 * delay;
         }
     }
-    is->frame_timer += delay;
+    is->frame_timer += delay / is->playRate;
 	
     av_dlog(NULL, "video: delay=%0.3f pts=%0.3f A-V=%f\n",
             delay, frame_current_pts, -diff);

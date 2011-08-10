@@ -200,7 +200,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	timer = nil;
 	
 	// pause first
-	if (newRate == 0.0) [decoder stop];
+	if ([decoder rate]) [decoder setRate:0.0];
 	
 	// current host time
 	_htOffset = CVGetCurrentHostTime();
@@ -246,7 +246,12 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void) play
 {
-	[self setRate:1.0];
+	BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
+	if (shiftKey) {
+		[self setRate:1.5];
+	} else {
+		[self setRate:1.0];
+	}
 }
 
 - (void) stop
