@@ -10,7 +10,7 @@
 #import <libavPlayer/libavPlayer.h>
 
 @interface LAVPTestAppDelegate : NSObject <NSApplicationDelegate> {
-    IBOutlet NSWindow *viewwindow;
+	IBOutlet NSWindow *viewwindow;
 	IBOutlet LAVPView *view;
 	LAVPStream *viewstream;
 	

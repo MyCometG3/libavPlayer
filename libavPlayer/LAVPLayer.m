@@ -157,7 +157,7 @@
 - (CGLPixelFormatObj) copyCGLPixelFormatForDisplayMask:(uint32_t)mask
 {
 	CGLRetainPixelFormat(_cglPixelFormat);
-    return _cglPixelFormat;
+	return _cglPixelFormat;
 }
 
 - (void) releaseCGLPixelFormat:(CGLPixelFormatObj)pixelFormat
@@ -168,7 +168,7 @@
 - (CGLContextObj) copyCGLContextForPixelFormat:(CGLPixelFormatObj)pixelFormat
 {
 	CGLRetainContext(_cglContext);
-    return _cglContext;
+	return _cglContext;
 }
 
 - (void) releaseCGLContext:(CGLContextObj)glContext

@@ -167,7 +167,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 {
 	// position uses double value between 0.0 and 1.0
 	
-	NSLog(@"seek start");
+	//NSLog(@"seek start");
 	
 	int64_t	duration = [decoder duration];	//usec
 	
@@ -184,7 +184,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 		[decoder setRate:0.0];
 	}
 	
-	NSLog(@"seek finished");
+	//NSLog(@"seek finished");
 }
 
 - (double_t) rate
@@ -246,12 +246,17 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void) play
 {
+#if 0
+	[self setRate:1.0];
+#else
+	// test code for playRate support
 	BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
 	if (shiftKey) {
 		[self setRate:1.5];
 	} else {
 		[self setRate:1.0];
 	}
+#endif
 }
 
 - (void) stop

@@ -143,7 +143,8 @@ int stream_component_open(VideoState *is, int stream_index)
 }
 
 void stream_component_close(VideoState *is, int stream_index)
-{NSLog(@"stream_component_close(%d)", stream_index);
+{
+	NSLog(@"stream_component_close(%d)", stream_index);
 	AVFormatContext *ic = is->ic;
 	AVCodecContext *avctx;
 	
@@ -477,7 +478,7 @@ void stream_pause(VideoState *is)
 	else
 		LAVPAudioQueueStart(is);
 	
-	NSLog(@"stream_pause = %s at %3.3f", (is->paused ? "paused" : "play"), get_master_clock(is));
+	//NSLog(@"stream_pause = %s at %3.3f", (is->paused ? "paused" : "play"), get_master_clock(is));
 }
 
 void stream_close(VideoState *is)

@@ -14,9 +14,8 @@
 @synthesize layerwindow;
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test" withExtension:@"mp4"];
-	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test2" withExtension:@"mp4"];
-//	NSURL *url = [[NSBundle mainBundle] URLForResource:@"test3" withExtension:@"mp4"];
+	NSString *filename = @"test";
+	NSURL *url = [[NSBundle mainBundle] URLForResource:filename withExtension:@"mp4"];
 	
 #if 1
 	// LAVPView test
@@ -27,8 +26,8 @@
 	//
 	[view setStream:viewstream];
 	
-	//	[view setNeedsDisplay:YES];
-	//	[stream gotoBeggining];
+//	[view setNeedsDisplay:YES];
+//	[stream gotoBeggining];
 #endif
 	
 #if 1
@@ -84,7 +83,6 @@
 //	[layer setNeedsDisplay];
 //	[layerstream gotoBeggining];
 #endif
-
 }
 
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
@@ -124,6 +122,7 @@
 		
 		[viewstream play];
 	}
+//	[view setNeedsDisplay:YES];
 }
 
 - (IBAction) togglePlayLayer:(id)sender
@@ -139,7 +138,7 @@
 		
 		[layerstream play];
 	}
-	[layer setNeedsDisplay];
+//	[layer setNeedsDisplay];
 }
 
 @end

@@ -84,9 +84,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) dealloc
 {
-    // Stop and Release the display link
+	// Stop and Release the display link
 	[self stopCVDisplayLink];
-    CVDisplayLinkRelease(displayLink);
+	CVDisplayLinkRelease(displayLink);
 	[lock release];
 	
 	if (image) {
@@ -239,8 +239,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	glOrtho(offsetW, dstSize.width+offsetW, offsetH, dstSize.height+offsetH, -1, 1);
 	glScalef(ratio, ratio, 1.0f);
 	
-    glMatrixMode(GL_MODELVIEW);    // select the modelview matrix
-    glLoadIdentity();              // reset it
+	glMatrixMode(GL_MODELVIEW);    // select the modelview matrix
+	glLoadIdentity();              // reset it
 	
 	glClearColor(0 , 0 , 0 , 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

@@ -34,13 +34,13 @@
 	CVPixelBufferRef pixelbuffer;
 	CGRect prevRect;
 	
-    GLuint	FBOid;
-    GLuint	FBOTextureId;
-    GLfloat	imageAspectRatio;
+	GLuint	FBOid;
+	GLuint	FBOTextureId;
+	GLfloat	imageAspectRatio;
 	CGRect	textureRect;	// Could be smaller than original CIImage extent
 	
-    CGLPixelFormatObj   _cglPixelFormat;
-    CGLContextObj       _cglContext;
+	CGLPixelFormatObj   _cglPixelFormat;
+	CGLContextObj       _cglContext;
 	
 	NSArray *gravities;
 	

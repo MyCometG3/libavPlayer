@@ -258,6 +258,7 @@
 		32C88DFF0371C24200C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				16E3B1C113BA0AE4000E6062 /* LAVPutil.c */,
 				32DBCF5E0370ADEE00C91783 /* libavPlayer_Prefix.pch */,
 				16A1933713ADB4F0008825FF /* LAVPcommon.h */,
 				16A193C413ADC268008825FF /* LAVPaudio.h */,
@@ -270,9 +271,8 @@
 				16A193BC13ADC1C2008825FF /* LAVPsubs.m */,
 				16A1932A13ADB3E3008825FF /* LAVPvideo.h */,
 				16A1932B13ADB3E3008825FF /* LAVPvideo.m */,
-				16E3B1C113BA0AE4000E6062 /* LAVPutil.c */,
-				166F893613E0555A00B74CCA /* LAVPthread.c */,
 				166F893713E0555A00B74CCA /* LAVPthread.h */,
+				166F893613E0555A00B74CCA /* LAVPthread.c */,
 			);
 			name = "Other Sources";
 			sourceTree = "<group>";
