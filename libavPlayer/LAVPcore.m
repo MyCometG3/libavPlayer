@@ -440,6 +440,8 @@ double get_master_clock(VideoState *is)
 	} else {
 		val = get_external_clock(is);
 	}
+	
+	val = val < 0.0 ? 0.0 : val;
 	return val;
 }
 
