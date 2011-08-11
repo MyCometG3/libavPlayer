@@ -300,7 +300,7 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
 	//
 	inBuffer->mAudioDataByteSize = stream - (UInt8 *)inBuffer->mAudioData;
 	OSStatus err = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
-	assert(err == 0);
+	assert(err == 0 || err == kAudioQueueErr_EnqueueDuringReset);
 	
 	[pool drain];
 }
@@ -369,9 +369,15 @@ void LAVPAudioQueueStart(VideoState *is)
 	//NSLog(@"LAVPAudioQueueStart");
 	
 	// Update playback rate
-	if ( audio_isPitchChanged(is) ) {
+	BOOL pitchDiff = audio_isPitchChanged(is);
+	if ( pitchDiff ) {
 		LAVPAudioQueueStop(is);
 		audio_updatePitch(is);
+	}
+	pitchDiff = audio_isPitchChanged(is);
+	if ( pitchDiff ) {
+		NSLog(@"ERROR: Failed to update pitch.");
+		assert(!pitchDiff);
 	}
 	
 	//
@@ -390,6 +396,9 @@ void LAVPAudioQueuePause(VideoState *is)
 	//NSLog(@"LAVPAudioQueuePause");
 	
 	OSStatus err = 0;
+	err = AudioQueueFlush(is->outAQ);
+	assert(err == 0);
+	
 	err = AudioQueuePause(is->outAQ);
 	assert(err == 0);
 }
@@ -407,16 +416,30 @@ void LAVPAudioQueueStop(VideoState *is)
 	assert(err == 0);
 	
 	// Stop AudioQueue
-	// Specifying NO with AudioQueueStop() to avoid severe threading issue
 	if (currentRunning) {
+#if 0
+		err = AudioQueueStop(is->outAQ, YES);
+		assert(err == 0);
+#else
+		// Specifying NO with AudioQueueStop() to avoid severe threading issue
 		err = AudioQueueStop(is->outAQ, NO);
 		assert(err == 0);
 		
-		for (;;) {
+		// wait - blocking
+		int limit = 100;	// 1.0 sec max
+		while (limit--) {
+			currentRunning = 0;
+			currentRunningSize = sizeof(currentRunning);
+			
 			usleep(10*1000);
 			err = AudioQueueGetProperty(is->outAQ, kAudioQueueProperty_IsRunning, &currentRunning, &currentRunningSize);
 			if (err == 0 && currentRunning == 0) break;
 		}
+		if (limit < 0) {
+			NSLog(@"ERROR: Failed to stop AudioQueue.");
+			assert(limit>=0);
+		}
+#endif
 	}
 }
 

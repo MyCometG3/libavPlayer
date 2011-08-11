@@ -282,8 +282,6 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	// position is in AV_TIME_BASE value.
 	// avutil.h defines timebase for AVFormatContext - in usec.
 	
-	/* note: this is performed asynchronously */
-	
 	if (is && is->ic) {
 		int64_t ts = FFMIN(is->ic->duration , FFMAX(0, pos));
 		
@@ -291,6 +289,23 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 			ts += is->ic->start_time;
 		
 		stream_seek(is, ts, 0, 0);
+		
+		// seek wait - blocking
+		int limit = 10;	// 0.1sec max
+		double_t rate = [self rate];
+		if (rate == 0.0) [self setRate:1.0];
+		while (limit--) {
+			usleep(10*1000);
+			double_t master = get_master_clock(is);
+			double_t request = ts/1.0e6;
+			double_t diff = fabs(master-request);
+			
+			if (!is->seek_req && diff < 1.0/15) 
+				break;
+		}
+		if (rate == 0.0) [self setRate:0.0];
+		if (limit <= 0) 
+			NSLog(@"ERROR: seek timeout detected.");
 		
 		return ts;
 	}

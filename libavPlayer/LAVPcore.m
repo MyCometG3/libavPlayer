@@ -307,10 +307,8 @@ int decode_thread(void *arg)
 				fprintf(stderr, "%s: error while seeking\n", is->ic->filename);
 			}else{
 				if (is->audio_stream >= 0) {
-					LAVPAudioQueueStop(is);
 					packet_queue_flush(&is->audioq);
 					packet_queue_put(&is->audioq, NULL);
-					LAVPAudioQueueStart(is);
 				}
 				if (is->subtitle_stream >= 0) {
 					packet_queue_flush(&is->subtitleq);
@@ -348,10 +346,13 @@ int decode_thread(void *arg)
 			}
 			usleep(10*1000);
 			if(is->audioq.size + is->videoq.size + is->subtitleq.size ==0){
-				//NSLog(@"End of packet detected.");
 				if (is->loop > 1) {
 					is->loop--;
 					stream_seek(is, 0, 0, 0);
+				}
+				if (!is->paused) {
+					NSLog(@"End of media detected at %.3f", is->ic->duration/1.0e6);
+					stream_pause(is);
 				}
 			}
 			[pool drain];
