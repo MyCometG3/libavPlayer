@@ -24,7 +24,9 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-//REQUIRES libz.dylib, libbz2.dylib
+/*
+ REQUIRED FRAMEWORKS: Cocoa, QuartzCore, CoreVideo
+*/
 
 #import <libavPlayer/LAVPStream.h>
 #import <libavPlayer/LAVPLayer.h>

@@ -9,4 +9,4 @@
 #import <CoreVideo/CoreVideo.h>
 #import <QuartzCore/QuartzCore.h>
 
-#import <libavPlayer/LAVPStream.h>
+#import <libavPlayer/libavPlayer.h>

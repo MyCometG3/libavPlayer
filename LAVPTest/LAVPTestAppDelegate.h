@@ -7,7 +7,6 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import <libavPlayer/libavPlayer.h>
 
 @interface LAVPTestAppDelegate : NSObject <NSApplicationDelegate> {
 	IBOutlet NSWindow *viewwindow;

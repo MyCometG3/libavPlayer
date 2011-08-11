@@ -52,7 +52,6 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 
 @implementation LAVPDecoder
 
-@synthesize is;
 @synthesize abort;
 
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr
@@ -103,7 +102,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	// Prepare thread runloop
 	NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
 	
-	self.is->decoderThread = [NSThread currentThread];
+	is->decoderThread = [NSThread currentThread];
 	
 	NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/60 
 													  target:self 

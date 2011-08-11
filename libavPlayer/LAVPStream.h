@@ -32,6 +32,7 @@ extern NSString * const LAVPStreamDidEndNotification;
 
 @interface LAVPStream : NSObject {
 	NSURL	*url;
+@private
 	LAVPDecoder *decoder;
 	uint64_t _htOffset;	// CVHostTime offset when play
 	double_t _rate;	// movie playback ratio
