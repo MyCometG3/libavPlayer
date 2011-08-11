@@ -62,6 +62,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 - (void) invalidate
 {
 	// perform clean up
+	[decoder invalidate];
 	[decoder release];
 	decoder = nil;
 	[url release];
@@ -189,7 +190,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void) setRate:(double_t) newRate
 {
-	NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
+	//NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
 	
 	// stop notificatino timer
 	if (timer) {
@@ -249,7 +250,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	}
 	
 	// Post notification
-	NSLog(@"LAVPStreamDidEndNotification");
+	//NSLog(@"LAVPStreamDidEndNotification");
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidEndNotification
 																 object:self];

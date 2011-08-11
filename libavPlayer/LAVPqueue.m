@@ -40,7 +40,7 @@ void packet_queue_init(PacketQueue *q)
 	q->cond = LAVPCreateCond();
 	
 	av_init_packet(&q->flush_pkt);
-	q->flush_pkt.data= (uint8_t *)"FLUSH";
+	q->flush_pkt.data= (uint8_t *)strdup("FLUSH");
 	
 	packet_queue_put(q, &q->flush_pkt);
 }

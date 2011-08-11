@@ -40,6 +40,7 @@
 @property (assign) BOOL abort;
 
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr;
+- (void) invalidate;
 - (void) threadMain;
 
 - (BOOL) readyForPTS:(double_t)pts;

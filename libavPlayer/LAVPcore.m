@@ -60,6 +60,8 @@ double get_external_clock(VideoState *is);
 /* open a given stream. Return 0 if OK */
 int stream_component_open(VideoState *is, int stream_index)
 {
+	//NSLog(@"stream_component_open(%d)", stream_index);
+	
 	AVFormatContext *ic = is->ic;
 	AVCodecContext *avctx;
 	AVCodec *codec;
@@ -144,7 +146,8 @@ int stream_component_open(VideoState *is, int stream_index)
 
 void stream_component_close(VideoState *is, int stream_index)
 {
-	NSLog(@"stream_component_close(%d)", stream_index);
+	//NSLog(@"stream_component_close(%d)", stream_index);
+	
 	AVFormatContext *ic = is->ic;
 	AVCodecContext *avctx;
 	
@@ -517,7 +520,6 @@ void stream_close(VideoState *is)
 		
 		// free format context
 		av_close_input_file(is->ic);
-		avformat_free_context(is->ic);
 		is->ic = NULL;
 		
 		//

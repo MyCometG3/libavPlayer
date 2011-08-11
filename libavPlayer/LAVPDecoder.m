@@ -79,12 +79,20 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	return self;
 }
 
+- (void) invalidate
+{
+	// perform clean up
+	if (!self.abort) {
+		stream_close(is);
+		self.abort = YES;
+		[NSThread sleepForTimeInterval:0.1];
+		CVPixelBufferRelease(pb);
+	}
+}
+
 - (void) dealloc
 {
-	stream_close(is);
-	self.abort = YES;
-	[NSThread sleepForTimeInterval:0.1];
-	CVPixelBufferRelease(pb);
+	[self invalidate];
 	[super dealloc];
 }
 
@@ -113,7 +121,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		
 		[p drain];
 	}
-	NSLog(@"abort");
+	
 	[timer invalidate];
 	
 	[pool drain];
