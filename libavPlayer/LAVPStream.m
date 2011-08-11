@@ -259,17 +259,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void) play
 {
-#if 0
 	[self setRate:1.0];
-#else
-	// test code for playRate support
-	BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
-	if (shiftKey) {
-		[self setRate:1.5];
-	} else {
-		[self setRate:1.0];
-	}
-#endif
 }
 
 - (void) stop

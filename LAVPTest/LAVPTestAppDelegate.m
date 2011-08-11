@@ -14,7 +14,7 @@
 @synthesize layerwindow;
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-	NSString *filename = @"test";
+	NSString *filename = @"test2";
 	NSURL *url = [[NSBundle mainBundle] URLForResource:filename withExtension:@"mp4"];
 	
 #if 1
@@ -116,11 +116,17 @@
 	} else {
 		QTTime currentTime = [viewstream currentTime];
 		QTTime duration = [viewstream duration];
-		if (currentTime.timeValue >= duration.timeValue) {
+		if (currentTime.timeValue + 1e6/30 >= duration.timeValue) {
 			[viewstream gotoBeggining];
 		}
 		
-		[viewstream play];
+		// test code for playRate support
+		BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
+		if (shiftKey) {
+			[viewstream setRate:1.5];
+		} else {
+			[viewstream setRate:1.0];
+		}
 	}
 //	[view setNeedsDisplay:YES];
 }
@@ -132,11 +138,17 @@
 	} else {
 		QTTime currentTime = [layerstream currentTime];
 		QTTime duration = [layerstream duration];
-		if (currentTime.timeValue >= duration.timeValue) {
+		if (currentTime.timeValue + 1e6/30 >= duration.timeValue) {
 			[layerstream gotoBeggining];
 		}
 		
-		[layerstream play];
+		// test code for playRate support
+		BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
+		if (shiftKey) {
+			[layerstream setRate:1.5];
+		} else {
+			[layerstream setRate:1.0];
+		}
 	}
 //	[layer setNeedsDisplay];
 }
