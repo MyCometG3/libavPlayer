@@ -218,8 +218,8 @@
 		1058C7B0FEA5585E11CA2CBB /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				169D704213EE2A5700031A4A /* QTKit.framework */,
 				16A196F813ADFDC1008825FF /* Cocoa.framework */,
+				169D704213EE2A5700031A4A /* QTKit.framework */,
 				16A1955A13ADF58D008825FF /* QuartzCore.framework */,
 				16A18FAB13AC567E008825FF /* CoreVideo.framework */,
 				16A1955813ADF584008825FF /* OpenGL.framework */,
