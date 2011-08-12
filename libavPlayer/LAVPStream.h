@@ -38,6 +38,8 @@ extern NSString * const LAVPStreamDidEndNotification;
 	double_t _rate;	// movie playback ratio
 	double_t _posOffset;	// movie time in {0.0, 1.0} 
 	NSTimer *timer;	// notification timer when EndOfMovie reached
+	BOOL _muted;
+	Float32 currentVol;
 }
 
 @property (retain, readonly) NSURL *url;
@@ -64,6 +66,8 @@ extern NSString * const LAVPStreamDidEndNotification;
 - (void) gotoEnd;
 - (Float32) volume;
 - (void) setVolume:(Float32)volume;
+- (BOOL) muted;
+- (void) setMuted:(BOOL)muted;
 
 @end
 
@@ -71,8 +75,6 @@ extern NSString * const LAVPStreamDidEndNotification;
 @interface LAVStream (control)
 - (void) stepForward;
 - (void) stepBackward;
-- (BOOL) muted;
-- (void) setMuted:(BOOL)muted;
 @end
 
 @interface LAVStream (attributes)

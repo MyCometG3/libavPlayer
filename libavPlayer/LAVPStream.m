@@ -279,12 +279,31 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (Float32) volume
 {
-	return [decoder volume];
+	return currentVol;
 }
 
 - (void) setVolume:(Float32)volume
 {
-	[decoder setVolume:volume];
+	currentVol = volume;
+	if (!_muted)
+		[decoder setVolume:volume];
 }
+
+- (BOOL) muted
+{
+	return _muted;
+}
+
+- (void) setMuted:(BOOL)muted
+{
+	if (muted) {
+		_muted = TRUE;
+		[decoder setVolume:0.0];
+	} else {
+		_muted = FALSE;
+		[decoder setVolume:currentVol];
+	}
+}
+
 
 @end
