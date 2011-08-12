@@ -305,5 +305,4 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	}
 }
 
-
 @end

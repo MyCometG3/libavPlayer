@@ -44,30 +44,38 @@ extern NSString * const LAVPStreamDidEndNotification;
 
 @property (retain, readonly) NSURL *url;
 
+@property (readonly) NSSize frameSize;
+@property (readonly) QTTime duration;
+@property (assign) QTTime currentTime;
+@property (assign) double_t position;
+@property (assign) double_t rate;
+@property (assign) Float32 volume;
+@property (assign) BOOL muted;
+
 - (id) initWithURL:(NSURL *)url error:(NSError **)errorPtr;
 + (id) streamWithURL:(NSURL *)url error:(NSError **)errorPtr;
 
-- (NSSize) frameSize;
+//- (NSSize) frameSize;
 - (BOOL) readyForCurrent;
 - (BOOL) readyForTime:(const CVTimeStamp*)ts;
 - (CVPixelBufferRef) getCVPixelBufferForCurrentAsPTS:(double_t *)pts;
 - (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 
-- (QTTime) duration;
-- (QTTime) currentTime;
-- (void) setCurrentTime:(QTTime)newTime;
-- (double_t) position;
-- (void) setPosition:(double_t)newPosition;
-- (double_t) rate;
-- (void) setRate:(double_t)newRate;
+//- (QTTime) duration;
+//- (QTTime) currentTime;
+//- (void) setCurrentTime:(QTTime)newTime;
+//- (double_t) position;
+//- (void) setPosition:(double_t)newPosition;
+//- (double_t) rate;
+//- (void) setRate:(double_t)newRate;
 - (void) play;
 - (void) stop;
 - (void) gotoBeggining;
 - (void) gotoEnd;
-- (Float32) volume;
-- (void) setVolume:(Float32)volume;
-- (BOOL) muted;
-- (void) setMuted:(BOOL)muted;
+//- (Float32) volume;
+//- (void) setVolume:(Float32)volume;
+//- (BOOL) muted;
+//- (void) setMuted:(BOOL)muted;
 
 @end
 
