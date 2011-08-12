@@ -426,8 +426,8 @@ void LAVPAudioQueueStop(VideoState *is)
 		assert(err == 0);
 		
 		// wait - blocking
-		int limit = 100;	// 1.0 sec max
-		while (limit--) {
+		int retry = 100;	// 1.0 sec max
+		while (retry--) {
 			currentRunning = 0;
 			currentRunningSize = sizeof(currentRunning);
 			
@@ -435,9 +435,9 @@ void LAVPAudioQueueStop(VideoState *is)
 			err = AudioQueueGetProperty(is->outAQ, kAudioQueueProperty_IsRunning, &currentRunning, &currentRunningSize);
 			if (err == 0 && currentRunning == 0) break;
 		}
-		if (limit < 0) {
+		if (retry < 0) {
 			NSLog(@"ERROR: Failed to stop AudioQueue.");
-			assert(limit>=0);
+			assert(retry>=0);
 		}
 #endif
 	}

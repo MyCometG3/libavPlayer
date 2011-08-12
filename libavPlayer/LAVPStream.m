@@ -237,12 +237,12 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	}
 	
 	// Ensure stream to pause
-	int limit = 10;	// 0.1sec max
-	while (limit--) {
+	int retry = 100;	// 1.0 sec max
+	while (retry--) {
 		if ([decoder rate] == 0.0) break;
 		usleep(10*1000);
 	}
-	if (limit <= 0) {
+	if (retry < 0) {
 		dispatch_async(dispatch_get_current_queue(), ^(void){
 			[self movieFinished];
 		});

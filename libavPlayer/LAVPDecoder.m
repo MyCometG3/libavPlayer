@@ -62,12 +62,14 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		if (is) {
 			[NSThread detachNewThreadSelector:@selector(threadMain) toTarget:self withObject:nil];
 			
-			int retry = 100;
+			int retry = 100;	// 1.0 sec max
 			while(retry--) {
-				usleep(10 * 1000);
+				usleep(10*1000);
 				
 				if (is->pictq_size) break;
 			}
+			if (retry < 0) 
+				NSLog(@"ERROR: stream_open timeout detected.");
 			stream_pause(is);
 		} else {
 			[self release];
@@ -298,10 +300,10 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		stream_seek(is, ts, 0, 0);
 		
 		// seek wait - blocking
-		int limit = 10;	// 0.1sec max
+		int retry = 100;	// 1.0sec max
 		double_t rate = [self rate];
 		if (rate == 0.0) [self setRate:1.0];
-		while (limit--) {
+		while (retry--) {
 			usleep(10*1000);
 			double_t master = get_master_clock(is);
 			double_t request = ts/1.0e6;
@@ -311,8 +313,8 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 				break;
 		}
 		if (rate == 0.0) [self setRate:0.0];
-		if (limit <= 0) 
-			NSLog(@"ERROR: seek timeout detected.");
+		if (retry < 0) 
+			NSLog(@"ERROR: stream_seek timeout detected.");
 		
 		return ts;
 	}

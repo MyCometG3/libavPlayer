@@ -372,7 +372,7 @@ int decode_thread(void *arg)
 				break;
 			}
 			/* wait for user event */
-			usleep(100*1000);
+			usleep(10*1000);
 			[pool drain];
 			continue;
 		}
@@ -396,7 +396,7 @@ int decode_thread(void *arg)
 	
 	// wait sync
 	while (!is->abort_request) {
-		usleep(100*1000);
+		usleep(10*1000);
 	}
 	
 	// finish thread
