@@ -354,7 +354,7 @@ int decode_thread(void *arg)
 					stream_seek(is, 0, 0, 0);
 				}
 				if (!is->paused) {
-					NSLog(@"End of media detected at %.3f", is->ic->duration/1.0e6);
+					//NSLog(@"End of media detected at %.3f", is->ic->duration/1.0e6);
 					stream_pause(is);
 				}
 			}
