@@ -216,9 +216,6 @@
 		else
 			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
 		if (pb) {
-			if (lastPTS == pts) {
-				return;
-			}
 			lastPTS = pts;
 			
 			[self setCVPixelBuffer:pb];
