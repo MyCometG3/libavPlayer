@@ -111,6 +111,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 													selector:@selector(refreshPicture) 
 													userInfo:nil 
 													 repeats:YES];
+	[runLoop addTimer:timer forMode:NSRunLoopCommonModes];
 	
 	// 
 	while ( self.abort != YES ) {
