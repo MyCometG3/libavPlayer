@@ -448,7 +448,7 @@
 	// Handle kCAGravity behavior
 	CGSize tr, tl, br, bl;
 	CGSize ls = [self bounds].size;
-	CGSize vs = [image extent].size;
+	CGSize vs = [_stream frameSize];
 	CGFloat hRatio = vs.width / ls.width;
 	CGFloat vRatio = vs.height / ls.height;
 	CGFloat lAspect = ls.width/ls.height;

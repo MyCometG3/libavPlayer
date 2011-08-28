@@ -209,7 +209,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	
 	//
-	NSSize srcSize = [image extent].size;
+	NSSize srcSize = [_stream frameSize];
 	NSSize dstSize = [self bounds].size;
 	CGFloat ratio = 1.0f;
 	GLsizei offsetW = 0, offsetH = 0;
@@ -247,7 +247,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	// Render CVImageBuffer into CGLContext
 	[lock lock];
-	[ciContext drawImage:image atPoint:CGPointZero fromRect:[image extent]];
+	NSRect targetRect = NSMakeRect(0, 0, srcSize.width, srcSize.height);
+	[ciContext drawImage:image inRect:targetRect fromRect:[image extent]];
 	[lock unlock];
 	
 #if 0

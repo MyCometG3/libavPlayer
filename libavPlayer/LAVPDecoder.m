@@ -229,6 +229,20 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 - (NSSize) frameSize
 {
 	NSSize size = NSMakeSize(is->width, is->height);
+	
+	if (is->video_st && is->video_st->codec) {
+		AVRational sRatio = is->video_st->sample_aspect_ratio;
+		AVRational cRatio = is->video_st->codec->sample_aspect_ratio;
+		
+		if (sRatio.num * sRatio.den) {
+			// Use stream aspect ratio
+			size = NSMakeSize(is->width * sRatio.num / sRatio.den, is->height);
+		} else if (cRatio.num * cRatio.den) {
+			// Use codec aspect ratio
+			size = NSMakeSize(is->width * cRatio.num / cRatio.den, is->height);
+		}
+	}
+	
 	//NSLog(@"size = %@", NSStringFromSize(size));
 	return size;
 }
