@@ -34,10 +34,10 @@ extern NSString * const LAVPStreamDidEndNotification;
 	NSURL	*url;
 @private
 	LAVPDecoder *decoder;
-	uint64_t _htOffset;	// CVHostTime offset when play
-	double_t _rate;	// movie playback ratio
+	uint64_t _htOffset;		// CVHostTime offset when play
+	double_t _rate;			// movie playback ratio
 	double_t _posOffset;	// movie time in {0.0, 1.0} 
-	NSTimer *timer;	// notification timer when EndOfMovie reached
+	NSTimer *timer;			// notification timer when EndOfMovie reached
 	BOOL _muted;
 	Float32 currentVol;
 }
@@ -55,29 +55,19 @@ extern NSString * const LAVPStreamDidEndNotification;
 - (id) initWithURL:(NSURL *)url error:(NSError **)errorPtr;
 + (id) streamWithURL:(NSURL *)url error:(NSError **)errorPtr;
 
-//- (NSSize) frameSize;
 - (BOOL) readyForCurrent;
 - (BOOL) readyForTime:(const CVTimeStamp*)ts;
 - (CVPixelBufferRef) getCVPixelBufferForCurrentAsPTS:(double_t *)pts;
 - (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 
-//- (QTTime) duration;
-//- (QTTime) currentTime;
-//- (void) setCurrentTime:(QTTime)newTime;
-//- (double_t) position;
-//- (void) setPosition:(double_t)newPosition;
-//- (double_t) rate;
-//- (void) setRate:(double_t)newRate;
 - (void) play;
 - (void) stop;
 - (void) gotoBeggining;
 - (void) gotoEnd;
-//- (Float32) volume;
-//- (void) setVolume:(Float32)volume;
-//- (BOOL) muted;
-//- (void) setMuted:(BOOL)muted;
 
 @end
+
+/* ================================ N/A ================================ */
 
 #if 0
 @interface LAVStream (control)
