@@ -105,8 +105,21 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (id)initWithFrame:(NSRect)frameRect
 {
-	NSOpenGLPixelFormat *pixelFormat;
-	pixelFormat = [NSOpenGLView defaultPixelFormat];
+	NSOpenGLPixelFormatAttribute attrs[] =
+	{
+		NSOpenGLPFAAccelerated,
+		NSOpenGLPFANoRecovery,
+		NSOpenGLPFADoubleBuffer,
+		NSOpenGLPFAColorSize, 24,
+		NSOpenGLPFAAlphaSize,  8,
+		//NSOpenGLPFADepthSize, 32,	// no depth buffer
+		NSOpenGLPFAMultisample,
+		NSOpenGLPFASampleBuffers, 1,
+		NSOpenGLPFASamples, 4,
+		0
+	};
+	
+	NSOpenGLPixelFormat *pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs] autorelease];
 	
 	// Initialize NSOpenGLView using specified pixelFormat
 	self = [super initWithFrame:frameRect pixelFormat:pixelFormat];
