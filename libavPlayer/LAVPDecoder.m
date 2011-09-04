@@ -62,7 +62,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		if (is) {
 			[NSThread detachNewThreadSelector:@selector(threadMain) toTarget:self withObject:nil];
 			
-			int retry = 100;	// 1.0 sec max
+			int retry = 150;	// 1.5 sec max
 			while(retry--) {
 				usleep(10*1000);
 				
