@@ -35,6 +35,11 @@
 	CVPixelBufferRef pixelbuffer;
 	CVDisplayLinkRef displayLink;
 	
+	GLuint	FBOid;
+	GLuint	FBOTextureId;
+	GLfloat	imageAspectRatio;
+	CGRect	textureRect;	// Could be smaller than original CIImage extent
+	
 	NSLock *lock;
 	
 	double_t lastPTS;

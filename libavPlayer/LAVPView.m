@@ -25,6 +25,9 @@
 
 #import "LAVPView.h"
 
+#define DUMMY_W 640
+#define DUMMY_H 480
+
 @interface LAVPView (private)
 
 - (uint64_t)startCVDisplayLink;
@@ -32,6 +35,11 @@
 - (CVReturn)getFrameForTime:(const CVTimeStamp*)outputTime;
 
 - (void) drawImage ;
+- (void) setCIContext;
+- (void) setFBO;
+- (void) renderCoreImageToFBO;
+- (void) renderQuad;
+
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
 
 - (CVPixelBufferRef) getCVPixelBuffer;
@@ -41,7 +49,6 @@
 
 @implementation LAVPView
 @synthesize expandToFit = _expandToFit;
-@synthesize stream = _stream;
 
 static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, 
 									  const CVTimeStamp* now, 
@@ -88,6 +95,12 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	[self stopCVDisplayLink];
 	CVDisplayLinkRelease(displayLink);
 	[lock release];
+	
+	// Delete the texture
+	glDeleteTextures(1, &FBOTextureId);
+	
+	// and the FBO
+	glDeleteFramebuffersEXT(1, &FBOid);
 	
 	if (image) {
 		[image release];
@@ -213,7 +226,45 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
  Draw CVImageBuffer into CGLContext
  */
 - (void) drawImage {
-	//
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+		// Prepare CIContext
+		[self setCIContext];
+		
+		// Prepare new texture
+		[self setFBO];
+		
+		// update texture with current CIImage
+		[self renderCoreImageToFBO];
+		
+		// Render quad
+		[self renderQuad];
+		
+	} else {
+		NSSize dstSize = [self bounds].size;
+		
+		// Set up canvas
+		glViewport(0, 0, dstSize.width, dstSize.height);
+		
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		
+		glMatrixMode(GL_MODELVIEW);    // select the modelview matrix
+		glLoadIdentity();              // reset it
+		
+		glClearColor(0 , 0 , 0 , 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+}
+
+/* =============================================================================================== */
+#pragma mark -
+/* =============================================================================================== */
+
+/*
+ Check CIContext and recreate if required
+ */
+- (void) setCIContext
+{
 	if (!ciContext) {
 		// Create CoreImage Context
 		CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
@@ -224,59 +275,200 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 											  options:NULL
 					  ] retain];
 	}
-	
-	//
-	NSSize srcSize = [_stream frameSize];
-	NSSize dstSize = [self bounds].size;
-	CGFloat ratio = 1.0f;
-	GLsizei offsetW = 0, offsetH = 0;
-	
-	if (_expandToFit) {
-		// Scale image to fit inside view
-		float dstAspect = dstSize.width/dstSize.height;
-		float srcAspect = srcSize.width/srcSize.height;
-		if (dstAspect<srcAspect) {
-			ratio = dstSize.width / srcSize.width;
-			offsetH = (srcSize.height*ratio-dstSize.height)/2;
-		} else {
-			ratio = dstSize.height / srcSize.height;
-			offsetW = (srcSize.width*ratio-dstSize.width)/2;
+}
+
+/*
+ Set up FBO and new Texture
+ */
+- (void) setFBO
+{
+	if (!FBOid) {
+		// create FBO object
+		glGenFramebuffersEXT(1, &FBOid);
+		assert(FBOid);
+		
+		// create texture
+		glGenTextures(1, &FBOTextureId);
+		assert(FBOTextureId);
+		
+		// Bind FBO
+		GLint   savedFBOid = 0;
+		glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &savedFBOid);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBOid);
+		
+		// Bind texture
+		glBindTexture(GL_TEXTURE_RECTANGLE_ARB, FBOTextureId);
+		
+		// Prepare GL_BGRA texture attached to FBO
+		glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		
+		glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA, textureRect.size.width, textureRect.size.height, 
+					 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
+		
+		// Attach texture to the FBO as its color destination
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_RECTANGLE_ARB, FBOTextureId, 0);
+		
+		// Make sure the FBO was created succesfully.
+		GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		if (GL_FRAMEBUFFER_COMPLETE_EXT != status) {
+			NSLog(@"glFramebufferTexture2DEXT() failed! (0x%04x)", status);
+			if (GL_FRAMEBUFFER_UNSUPPORTED_EXT == status) {
+				NSLog(@"GL_FRAMEBUFFER_UNSUPPORTED_EXT");
+			} else if (GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT == status) {
+				NSLog(@"GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT");
+			} else if (GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT == status) {
+				NSLog(@"GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT");
+			}
+			assert(GL_FRAMEBUFFER_COMPLETE_EXT != status);
 		}
-	} else {
-		// Center image inside view
-		offsetW = (srcSize.width*ratio - dstSize.width)/2.0;
-		offsetH = (srcSize.height*ratio - dstSize.height)/2.0;
+		
+		// unbind texture
+		glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+		
+		// unbind FBO 
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, savedFBOid);
+	}
+}
+
+/*
+ Render CoreImage into Texture
+ */
+- (void) renderCoreImageToFBO
+{
+	// Same approach; CoreImageGLTextureFBO - MyOpenGLView.m - renderCoreImageToFBO
+	
+	// Bind FBO 
+	GLint   savedFBOid = 0;
+	glGetIntegerv(GL_FRAMEBUFFER_BINDING_EXT, &savedFBOid);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, FBOid);
+	
+	{
+		// prepare canvas
+		GLint width = (GLint)ceil(textureRect.size.width);
+		GLint height = (GLint)ceil(textureRect.size.height);
+		
+		glViewport(0, 0, width, height);
+		
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		
+		glOrtho(0, width, 0, height, -1, 1);
+		
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		
+		// clear
+		glClear(GL_COLOR_BUFFER_BIT);
+		
+		// render CVImageBuffer into CGLContext // BUGGY //
+		[lock lock];
+		
+		// Fails (expand single pixel to texture)
+		//[ciContext drawImage:image atPoint:CGPointMake(0, 0) fromRect:[image extent]];
+		//[ciContext drawImage:image inRect:textureRect fromRect:[image extent]];
+		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width, height) fromRect:[image extent]];
+		
+		// Works
+		//[ciContext drawImage:image atPoint:CGPointMake(1, 1) fromRect:[image extent]];
+		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width-1, height-1) fromRect:[image extent]];
+		//[ciContext drawImage:image inRect:CGRectMake(1, 1, width-2, height-2) fromRect:[image extent]];
+		[ciContext drawImage:image inRect:CGRectMake(0.001, 0.001, width, height) fromRect:[image extent]];
+		
+		[lock unlock];
+		
+#if 0
+		// Debug - checkered pattern
+		const size_t unit = 40;
+		glColor3f(0.5f, 0.5f, 0.5f);
+		for (int x = 0; x<textureRect.size.width; x+=unit) 
+			for (int y = 0; y<textureRect.size.height; y+=unit)
+				if ((x + y)/unit & 1) 
+					glRectd(x, y, x+unit, y+unit);
+#endif
 	}
 	
-	// Set up canvas
-	glViewport(0, 0, dstSize.width, dstSize.height);
+	// Unbind FBO 
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, savedFBOid);
+}
+
+/*
+ Draw quad with Texture
+ */
+- (void) renderQuad
+{
+	// Handle kCAGravity behavior
+	CGSize tr, tl, br, bl;
+	CGSize ls = [self bounds].size;
+	CGSize vs = [_stream frameSize];
+	CGFloat hRatio = vs.width / ls.width;
+	CGFloat vRatio = vs.height / ls.height;
+	CGFloat lAspect = ls.width/ls.height;
+	CGFloat vAspect = vs.width/vs.height;
+	
+	if (_expandToFit) {
+		if (lAspect > vAspect) {	// Layer is wider aspect than video - Shrink horizontally
+			tr = CGSizeMake( hRatio/vRatio, 1.0f);
+			tl = CGSizeMake(-hRatio/vRatio, 1.0f);
+			bl = CGSizeMake(-hRatio/vRatio,-1.0f);
+			br = CGSizeMake( hRatio/vRatio,-1.0f);
+		} else {					// Layer is narrow aspect than video - Shrink vertically
+			tr = CGSizeMake( 1.0f, vRatio/hRatio);
+			tl = CGSizeMake(-1.0f, vRatio/hRatio);
+			bl = CGSizeMake(-1.0f,-vRatio/hRatio);
+			br = CGSizeMake( 1.0f,-vRatio/hRatio);
+		}
+	} else {
+		// The default value is kCAGravityResize
+		tr = CGSizeMake( 1.0f, 1.0f);
+		tl = CGSizeMake(-1.0f, 1.0f);
+		bl = CGSizeMake(-1.0f,-1.0f);
+		br = CGSizeMake( 1.0f,-1.0f);
+	}
+	
+	/* ========================================================= */
+	
+	// Same approach; CoreImageGLTextureFBO - MyOpenGLView.m - renderScene
+	
+	// prepare canvas
+	glViewport(0, 0, [self bounds].size.width, [self bounds].size.height);
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glOrtho(offsetW, dstSize.width+offsetW, offsetH, dstSize.height+offsetH, -1, 1);
-	glScalef(ratio, ratio, 1.0f);
 	
-	glMatrixMode(GL_MODELVIEW);    // select the modelview matrix
-	glLoadIdentity();              // reset it
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
 	
-	glClearColor(0 , 0 , 0 , 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glScalef(textureRect.size.width, textureRect.size.height, 1.0f);
 	
-	// Render CVImageBuffer into CGLContext
-	[lock lock];
-	NSRect targetRect = NSMakeRect(0, 0, srcSize.width, srcSize.height);
-	[ciContext drawImage:image inRect:targetRect fromRect:[image extent]];
-	[lock unlock];
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 	
-#if 0
-	// Debug - checkered pattern
-	const size_t unit = 40;
-	glColor3f(0.5f, 0.5f, 0.5f);
-	for (int x = 0; x<srcSize.width; x+=unit) 
-		for (int y = 0; y<srcSize.height; y+=unit)
-			if ((x + y)/unit & 1) 
-				glRectd(x, y, x+unit, y+unit);
-#endif
+	// clear
+	glClear(GL_COLOR_BUFFER_BIT);
+	
+	// Bind Texture
+	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, FBOTextureId);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	
+	//glPushMatrix();
+	{
+		// Draw simple quad with texture image
+		glBegin(GL_QUADS);
+		
+		glTexCoord2f( 1.0f, 1.0f ); glVertex2f( tr.width, tr.height );
+		glTexCoord2f( 0.0f, 1.0f ); glVertex2f( tl.width, tl.height );
+		glTexCoord2f( 0.0f, 0.0f ); glVertex2f( bl.width, bl.height );
+		glTexCoord2f( 1.0f, 0.0f ); glVertex2f( br.width, br.height );
+		
+		glEnd();
+	}
+	//glPopMatrix();
+	
+	// Unbind Texture
+	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 }
 
 /* =============================================================================================== */
@@ -349,6 +541,51 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	image = [[CIImage imageWithCVImageBuffer:pixelbuffer] retain];
 	
 	[lock unlock];
+}
+
+
+/* =============================================================================================== */
+#pragma mark -
+#pragma mark public
+/* =============================================================================================== */
+
+- (LAVPStream *) stream
+{
+	return _stream;
+}
+
+- (void) setStream:(LAVPStream *)newStream
+{
+	//NSLog(@"setStream:");
+	
+	//
+	[_stream autorelease];
+	_stream = [newStream retain];
+	
+	// Get the size of the image we are going to need throughout
+	if (_stream && [_stream frameSize].width && [_stream frameSize].height)
+		textureRect = CGRectMake(0, 0, [_stream frameSize].width, [_stream frameSize].height);
+	else
+		textureRect = CGRectMake(0, 0, DUMMY_W, DUMMY_H);
+	
+	// Get the aspect ratio for possible scaling (e.g. texture coordinates)
+	imageAspectRatio = textureRect.size.width / textureRect.size.height;
+	
+	// Shrink texture size if it is bigger than limit
+	GLint maxTexSize; 
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
+	if (textureRect.size.width > maxTexSize || textureRect.size.height > maxTexSize) {
+		if (imageAspectRatio > 1) {
+			textureRect.size.width = maxTexSize; 
+			textureRect.size.height = maxTexSize / imageAspectRatio;
+		} else {
+			textureRect.size.width = maxTexSize * imageAspectRatio ;
+			textureRect.size.height = maxTexSize; 
+		}
+		//NSLog(@"texture rect = %@ (shrinked)", NSStringFromRect(textureRect));
+	} else {
+		//NSLog(@"texture rect = %@", NSStringFromRect(textureRect));
+	}
 }
 
 @end
