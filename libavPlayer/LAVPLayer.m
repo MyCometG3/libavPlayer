@@ -278,20 +278,35 @@
 	
 	/* ========================================================= */
 	
-	// Prepare CIContext
-	[self setCIContextForGLContext:_cglContext 
-					   pixelFormat:_cglPixelFormat];
-	
-	// Prepare new texture
-	[self setFBO];
-	
-	/* ========================================================= */
-	
-	// update texture with current CIImage
-	[self renderCoreImageToFBO];
-	
-	// Render quad
-	[self renderQuad];
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+		// Prepare CIContext
+		[self setCIContextForGLContext:_cglContext 
+						   pixelFormat:_cglPixelFormat];
+		
+		// Prepare new texture
+		[self setFBO];
+		
+		// update texture with current CIImage
+		[self renderCoreImageToFBO];
+		
+		// Render quad
+		[self renderQuad];
+		
+	} else {
+		NSSize dstSize = [self bounds].size;
+		
+		// Set up canvas
+		glViewport(0, 0, dstSize.width, dstSize.height);
+		
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		
+		glMatrixMode(GL_MODELVIEW);    // select the modelview matrix
+		glLoadIdentity();              // reset it
+		
+		glClearColor(0 , 0 , 0 , 1);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
 	
 	/* ========================================================= */
 	
