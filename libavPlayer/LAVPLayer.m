@@ -39,7 +39,7 @@
 - (void) renderCoreImageToFBO;
 - (void) renderQuad;
 
-- (void) setCIContextForGLContext:(CGLContextObj)glContext pixelFormat:(CGLPixelFormatObj)pixelFormat;
+- (void) setCIContext;
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
 
 - (CVPixelBufferRef) getCVPixelBuffer;
@@ -280,8 +280,7 @@
 	
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
 		// Prepare CIContext
-		[self setCIContextForGLContext:_cglContext 
-						   pixelFormat:_cglPixelFormat];
+		[self setCIContext];
 		
 		// Prepare new texture
 		[self setFBO];
@@ -327,11 +326,11 @@
 /*
  Check CIContext and recreate if required
  */
-- (void) setCIContextForGLContext:(CGLContextObj)glContext pixelFormat:(CGLPixelFormatObj)pixelFormat
+- (void) setCIContext
 {
 	if (!ciContext) {
-		ciContext = [[CIContext contextWithCGLContext:glContext 
-										  pixelFormat:pixelFormat 
+		ciContext = [[CIContext contextWithCGLContext:_cglContext 
+										  pixelFormat:_cglPixelFormat 
 										   colorSpace:NULL 
 											  options:NULL
 					  ] retain];
