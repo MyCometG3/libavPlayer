@@ -27,21 +27,20 @@
 #import <GLUT/glut.h>
 #import <OpenGL/gl.h>
 
-#define USECUSTOM 1
 #define DUMMY_W 640
 #define DUMMY_H 480
 
 @interface LAVPLayer (private)
 
 - (void) prepareOpenGL;
-- (void) drawImage ;
+
+- (void) drawImage;
+- (void) setCIContext;
 - (void) setFBO;
 - (void) renderCoreImageToFBO;
 - (void) renderQuad;
 
-- (void) setCIContext;
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
-
 - (CVPixelBufferRef) getCVPixelBuffer;
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb;
 
@@ -51,14 +50,22 @@
 
 - (void) dealloc
 {
-	[lock release];
+	// Release stream
+	if (_stream) {
+		[_stream release];
+		_stream = NULL;
+	}
 	
-	// Delete the texture
-	glDeleteTextures(1, &FBOTextureId);
+	// Delete the texture and the FBO
+	if (FBOid) {
+		glDeleteTextures(1, &FBOTextureId);
+		glDeleteFramebuffersEXT(1, &FBOid);
+	}
 	
-	// and the FBO
-	glDeleteFramebuffersEXT(1, &FBOid);
-	
+	if (lock) {
+		[lock release];
+		lock = NULL;
+	}
 	if (image) {
 		[image release];
 		image = NULL;
@@ -70,8 +77,10 @@
 	if (ciContext) {
 		[ciContext release];
 	}
-	
-	[gravities release];
+	if (gravities) {
+		[gravities release];
+		gravities = NULL;
+	}
 	
 	[super dealloc];
 }
@@ -97,7 +106,6 @@
 					  kCAGravityResizeAspectFill,	//11
 					  nil] retain];
 		
-#if USECUSTOM
 		// FBO Support
 		GLint numPixelFormats = 0;
 		CGLPixelFormatAttribute attributes[] =
@@ -119,7 +127,6 @@
 		
 		_cglContext = [super copyCGLContextForPixelFormat:_cglPixelFormat];
 		assert(_cglContext);
-#endif
 		
 		// Force CGLContext
 		CGLContextObj savedContext = CGLGetCurrentContext();
@@ -128,6 +135,8 @@
 		
 		// 
 		[self prepareOpenGL];
+		
+		/* ========================================================= */
 		
 		// Create Initial CVPixelBuffer and CIImage
 		//[self setCVPixelBuffer:NULL];
@@ -153,7 +162,6 @@
 #pragma mark -
 /* =============================================================================================== */
 
-#if USECUSTOM
 - (CGLPixelFormatObj) copyCGLPixelFormatForDisplayMask:(uint32_t)mask
 {
 	CGLRetainPixelFormat(_cglPixelFormat);
@@ -175,7 +183,6 @@
 {
 	CGLReleaseContext(_cglContext);
 }
-#endif
 
 - (BOOL) canDrawInCGLContext:(CGLContextObj)glContext 
 				 pixelFormat:(CGLPixelFormatObj)pixelFormat 
@@ -183,6 +190,7 @@
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
 	if (!_stream) return NO;
+	if (NSEqualSizes([_stream frameSize], NSZeroSize)) return NO;
 	
 #if 0
 	return YES;
@@ -204,8 +212,6 @@
 			 forLayerTime:(CFTimeInterval)timeInterval 
 			  displayTime:(const CVTimeStamp *)timeStamp
 {
-	if (!_stream) return;
-	
 	// Prepare CIImage
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
 		CVPixelBufferRef pb;
@@ -329,6 +335,7 @@
 - (void) setCIContext
 {
 	if (!ciContext) {
+		// Create CoreImage Context
 		ciContext = [[CIContext contextWithCGLContext:_cglContext 
 										  pixelFormat:_cglPixelFormat 
 										   colorSpace:NULL 
@@ -658,7 +665,7 @@
 		image = NULL;
 	}
 	if (pixelbuffer) {
-		CVPixelBufferRelease(pixelbuffer);
+		CVPixelBufferRetain(pixelbuffer);
 		pixelbuffer = NULL;
 	}
 	

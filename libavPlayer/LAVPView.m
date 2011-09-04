@@ -34,16 +34,16 @@
 
 - (uint64_t)startCVDisplayLink;
 - (uint64_t)stopCVDisplayLink;
+
 - (CVReturn)getFrameForTime:(const CVTimeStamp*)outputTime;
 
-- (void) drawImage ;
+- (void) drawImage;
 - (void) setCIContext;
 - (void) setFBO;
 - (void) renderCoreImageToFBO;
 - (void) renderQuad;
 
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
-
 - (CVPixelBufferRef) getCVPixelBuffer;
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb;
 
@@ -93,17 +93,26 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) dealloc
 {
-	// Stop and Release the display link
+	// Stop and Release the display link first
 	[self stopCVDisplayLink];
 	CVDisplayLinkRelease(displayLink);
-	[lock release];
 	
-	// Delete the texture
-	glDeleteTextures(1, &FBOTextureId);
+	// Release stream
+	if (_stream) {
+		[_stream release];
+		_stream = NULL;
+	}
 	
-	// and the FBO
-	glDeleteFramebuffersEXT(1, &FBOid);
+	// Delete the texture and the FBO
+	if (FBOid) {
+		glDeleteTextures(1, &FBOTextureId);
+		glDeleteFramebuffersEXT(1, &FBOid);
+	}
 	
+	if (lock) {
+		[lock release];
+		lock = NULL;
+	}
 	if (image) {
 		[image release];
 		image = NULL;
@@ -115,11 +124,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	if (ciContext) {
 		[ciContext release];
 	}
+	
 	[super dealloc];
 }
 
 - (id)initWithFrame:(NSRect)frameRect
 {
+	// FBO Support
 	NSOpenGLPixelFormatAttribute attrs[] =
 	{
 		NSOpenGLPFAAccelerated,
@@ -141,21 +152,21 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	if (self) {
 		// Create Initial CVPixelBuffer and CIImage
-		[self setCVPixelBuffer:NULL];
+		//[self setCVPixelBuffer:NULL];
+		
+		lock = [[NSLock alloc] init];
+		lastPTS = -1;
+		
+		// Set default value
+		_expandToFit = NO;
 		
 		// Turn on VBL syncing for swaps
 		GLint syncVBL = 1;
 		[[self openGLContext] setValues:&syncVBL forParameter:NSOpenGLCPSwapInterval];
 		
-		// Set default value
-		_expandToFit = NO;
-		
 		// Create and start CVDisplayLink
 		CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
 		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, self);
-		
-		lock = [[NSLock alloc] init];
-		lastPTS = -1;
 		
 		[self startCVDisplayLink];
 	}
@@ -413,6 +424,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	CGFloat vAspect = vs.width/vs.height;
 	
 	if (_expandToFit) {
+		//kCAGravityResizeAspect
 		if (lAspect > vAspect) {	// Layer is wider aspect than video - Shrink horizontally
 			tr = CGSizeMake( hRatio/vRatio, 1.0f);
 			tl = CGSizeMake(-hRatio/vRatio, 1.0f);
@@ -535,8 +547,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	// Replace current CVPixelBuffer with new one
 	if (pb) {
+		CVPixelBufferRetain(pb);
 		pixelbuffer = pb;
-		CVPixelBufferRetain(pixelbuffer);
 	} else {
 		pixelbuffer = [self createDummyCVPixelBufferWithSize:([self bounds].size)];
 	}
@@ -590,6 +602,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	} else {
 		//NSLog(@"texture rect = %@", NSStringFromRect(textureRect));
 	}
+	
+	// Try to update NSOpenGLLayer
+	[self setNeedsDisplay:YES];
 }
 
 @end
