@@ -24,6 +24,8 @@
  */
 
 #import "LAVPView.h"
+#import <GLUT/glut.h>
+#import <OpenGL/gl.h>
 
 #define DUMMY_W 640
 #define DUMMY_H 480
@@ -215,6 +217,11 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	// Enable texturing 
 	glEnable(GL_TEXTURE_RECTANGLE_ARB);
+	
+	// Check FBO Support
+	const GLubyte* strExt = glGetString(GL_EXTENSIONS);
+	GLboolean isFBO = gluCheckExtension((const GLubyte*)"GL_EXT_framebuffer_object", strExt);
+	assert(isFBO == GL_TRUE);
 }
 
 #pragma mark private
