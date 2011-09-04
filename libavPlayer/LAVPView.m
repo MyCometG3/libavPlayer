@@ -176,12 +176,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			
 			[self setCVPixelBuffer:pb];
 			
-			// Update Image
-			if ([self inLiveResize]) {
-				[self display];
-			} else {
-				[self setNeedsDisplay:YES];
-			}
+			// With help of CVDisplayLink, we can use -display instead of setNeedsDisplay.
+			[self display];
+			
 			return kCVReturnSuccess;
 		} else {
 			//NSLog(@"LAVPView: getFrameForTime: CVPixelBuffer is not ready.");
