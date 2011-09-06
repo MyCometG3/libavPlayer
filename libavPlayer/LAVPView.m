@@ -205,13 +205,15 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void)drawRect:(NSRect)theRect
 {
-	//NSLog(@"drawRect:");
+	[lock lock];
 	
 	// Update Image
 	[self drawImage];
 	
 	// Finishing touch by super class
 	[super drawRect:theRect];
+	
+	[lock unlock];
 }
 
 #pragma mark NSOpenGLView
@@ -379,7 +381,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		// render CVImageBuffer into CGLContext // BUGGY //
-		[lock lock];
 		
 		// Fails (expand single pixel to texture)
 		//[ciContext drawImage:image atPoint:CGPointMake(0, 0) fromRect:[image extent]];
@@ -391,8 +392,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width-1, height-1) fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(1, 1, width-2, height-2) fromRect:[image extent]];
 		[ciContext drawImage:image inRect:CGRectMake(0.001, 0.001, width, height) fromRect:[image extent]];
-		
-		[lock unlock];
 		
 #if 0
 		// Debug - checkered pattern
@@ -534,8 +533,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb
 {
-	[lock lock];
-	
 	if (image) {
 		[image release];
 		image = NULL;
@@ -555,8 +552,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	// Replace current CIImage with new one
 	image = [[CIImage imageWithCVImageBuffer:pixelbuffer] retain];
-	
-	[lock unlock];
 }
 
 
@@ -573,6 +568,16 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 - (void) setStream:(LAVPStream *)newStream
 {
 	//NSLog(@"setStream:");
+	
+	[lock lock];
+	
+	// Delete the texture and the FBO
+	if (FBOid) {
+		glDeleteTextures(1, &FBOTextureId);
+		glDeleteFramebuffersEXT(1, &FBOid);
+		FBOTextureId = 0;
+		FBOid = 0;
+	}
 	
 	//
 	[_stream autorelease];
@@ -605,6 +610,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	// Try to update NSOpenGLLayer
 	[self setNeedsDisplay:YES];
+	
+	[lock unlock];
 }
 
 @end
