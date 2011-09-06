@@ -547,7 +547,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		CVPixelBufferRetain(pb);
 		pixelbuffer = pb;
 	} else {
-		pixelbuffer = [self createDummyCVPixelBufferWithSize:([self bounds].size)];
+		pixelbuffer = [self createDummyCVPixelBufferWithSize:NSMakeSize(DUMMY_W, DUMMY_H)];
 	}
 	
 	// Replace current CIImage with new one
