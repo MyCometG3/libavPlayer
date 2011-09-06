@@ -60,6 +60,8 @@
 	if (FBOid) {
 		glDeleteTextures(1, &FBOTextureId);
 		glDeleteFramebuffersEXT(1, &FBOid);
+		FBOTextureId = 0;
+		FBOid = 0;
 	}
 	
 	if (lock) {
@@ -76,6 +78,7 @@
 	}
 	if (ciContext) {
 		[ciContext release];
+		ciContext = NULL;
 	}
 	if (gravities) {
 		[gravities release];

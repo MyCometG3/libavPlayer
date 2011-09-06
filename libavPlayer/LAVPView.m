@@ -107,6 +107,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	if (FBOid) {
 		glDeleteTextures(1, &FBOTextureId);
 		glDeleteFramebuffersEXT(1, &FBOid);
+		FBOTextureId = 0;
+		FBOid = 0;
 	}
 	
 	if (lock) {
@@ -123,6 +125,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	if (ciContext) {
 		[ciContext release];
+		ciContext = NULL;
 	}
 	
 	[super dealloc];
