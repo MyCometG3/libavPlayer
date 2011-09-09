@@ -62,11 +62,20 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 - (void) invalidate
 {
 	// perform clean up
+	[timer invalidate];
+	timer = nil;
+	
 	[decoder invalidate];
 	[decoder release];
 	decoder = nil;
+	
 	[url release];
 	url = nil;
+}
+
+- (void) finalize
+{
+	[self invalidate];
 }
 
 - (void) dealloc

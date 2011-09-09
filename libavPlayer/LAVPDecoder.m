@@ -96,6 +96,11 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	}
 }
 
+- (void) finalize
+{
+	[self invalidate];
+}
+
 - (void) dealloc
 {
 	[self invalidate];

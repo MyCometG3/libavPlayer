@@ -48,6 +48,33 @@
 
 @implementation LAVPLayer
 
+- (void) finalize
+{
+	// Release stream
+	_stream = NULL;
+	
+	// Delete the texture and the FBO
+	if (FBOid) {
+		glDeleteTextures(1, &FBOTextureId);
+		glDeleteFramebuffersEXT(1, &FBOid);
+		FBOTextureId = 0;
+		FBOid = 0;
+	}
+	
+	lock = NULL;
+	
+	image = NULL;
+	
+	if (pixelbuffer) {
+		CVPixelBufferRelease(pixelbuffer);
+		pixelbuffer = NULL;
+	}
+	
+	ciContext = NULL;
+	
+	gravities = NULL;
+}
+
 - (void) dealloc
 {
 	// Release stream

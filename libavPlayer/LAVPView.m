@@ -91,6 +91,35 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	return CVGetCurrentHostTime();
 }
 
+- (void) finalize
+{
+	// Stop and Release the display link first
+	[self stopCVDisplayLink];
+	CVDisplayLinkRelease(displayLink);
+	
+	// Release stream
+	_stream = NULL;
+	
+	// Delete the texture and the FBO
+	if (FBOid) {
+		glDeleteTextures(1, &FBOTextureId);
+		glDeleteFramebuffersEXT(1, &FBOid);
+		FBOTextureId = 0;
+		FBOid = 0;
+	}
+	
+	lock = NULL;
+	
+	image = NULL;
+	
+	if (pixelbuffer) {
+		CVPixelBufferRelease(pixelbuffer);
+		pixelbuffer = NULL;
+	}
+	
+	ciContext = NULL;
+}
+
 - (void) dealloc
 {
 	// Stop and Release the display link first
