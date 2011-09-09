@@ -83,11 +83,16 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 - (void) invalidate
 {
 	// perform clean up
-	if (!self.abort) {
-		stream_close(is);
+	if (is && !self.abort) {
 		self.abort = YES;
 		[NSThread sleepForTimeInterval:0.1];
+		
+		stream_close(is);
+		is = NULL;
+	}
+	if (pb) {
 		CVPixelBufferRelease(pb);
+		pb = NULL;
 	}
 }
 
@@ -106,7 +111,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	
 	is->decoderThread = [NSThread currentThread];
 	
-	NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/60 
+	NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/120 
 													  target:self 
 													selector:@selector(refreshPicture) 
 													userInfo:nil 
@@ -119,7 +124,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		
 		//NSLog(@"pos = %04.3f (sec)", [self position]/1.0e6);
 		
-		[runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+		[runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
 		
 		[p drain];
 	}
