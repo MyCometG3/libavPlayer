@@ -238,7 +238,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			}
 			lastPTS = pts;
 			
+			[lock lock];
 			[self setCVPixelBuffer:pb];
+			[lock unlock];
 			
 			// With help of CVDisplayLink, we can use -display instead of setNeedsDisplay.
 			[self display];

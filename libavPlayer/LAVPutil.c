@@ -80,11 +80,11 @@ void copy_planar_YUV420_to_2vuy(size_t width, size_t height,
 #if ENABLEFASTER
 #if USESIMD
 		for( ; x <= width-32; x += 32 ) {			// process W32xH2 pixels concurrently
-			vUInt8 u = _mm_loadu_si128((__m128i*)(x/2+pu)), v = _mm_loadu_si128((__m128i*)(x/2+pv));
+			vUInt8 u = _mm_load_si128((__m128i*)(x/2+pu)), v = _mm_load_si128((__m128i*)(x/2+pv));
 			vUInt8 uv1 = _mm_unpackhi_epi8(u, v), uv0 = _mm_unpacklo_epi8(u, v);
 			
-			vUInt8 yt0 = _mm_loadu_si128((__m128i*)( 0+x+pytop)), yt1 = _mm_loadu_si128((__m128i*)(16+x+pytop));
-			vUInt8 yb0 = _mm_loadu_si128((__m128i*)( 0+x+pybot)), yb1 = _mm_loadu_si128((__m128i*)(16+x+pybot));
+			vUInt8 yt0 = _mm_load_si128((__m128i*)( 0+x+pytop)), yt1 = _mm_load_si128((__m128i*)(16+x+pytop));
+			vUInt8 yb0 = _mm_load_si128((__m128i*)( 0+x+pybot)), yb1 = _mm_load_si128((__m128i*)(16+x+pybot));
 			
 			_mm_stream_si128((__m128i*)( 0+x*2+p2top), _mm_unpacklo_epi8(uv0, yt0) );	// Chunky top left high
 			_mm_stream_si128((__m128i*)(16+x*2+p2top), _mm_unpackhi_epi8(uv0, yt0) );	// Chunky top left low
