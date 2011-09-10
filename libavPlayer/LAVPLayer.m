@@ -764,6 +764,7 @@
 	}
 	
 	// Try to update CAOpenGLLayer
+	lastPTS = -1;
 	[self setNeedsDisplay];
 	
 	[lock unlock];

@@ -641,6 +641,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	
 	// Try to update NSOpenGLLayer
+	lastPTS = -1;
 	[self setNeedsDisplay:YES];
 	
 	[lock unlock];
