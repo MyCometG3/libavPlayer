@@ -21,6 +21,8 @@
 @property (assign) IBOutlet NSWindow *viewwindow;
 @property (assign) IBOutlet NSWindow *layerwindow;
 
+- (void) loadMovieAtURL:(NSURL *)url;
+
 - (IBAction) togglePlayView:(id)sender;
 - (IBAction) togglePlayLayer:(id)sender;
 

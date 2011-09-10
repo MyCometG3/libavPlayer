@@ -14,10 +14,33 @@
 @synthesize layerwindow;
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
-	NSString *filename = @"test2";
-	NSURL *url = [[NSBundle mainBundle] URLForResource:filename withExtension:@"mp4"];
+	// Restore prev movie (on start up)
+	NSURL *url = [[NSUserDefaults standardUserDefaults] URLForKey:@"url"];
+	NSURL *urlDefault = [[NSBundle mainBundle] URLForResource:@"ColorBars" withExtension:@"mov"];
 	
+	if (url) {
+		NSError *error = NULL;
+		NSFileWrapper *file = [[[NSFileWrapper alloc] initWithURL:url 
+														 options:NSFileWrapperReadingImmediate 
+														   error:&error] autorelease];
+		if ( file ) {
+			[self loadMovieAtURL:url];
+		} else {
+			[self loadMovieAtURL:urlDefault];
+		}
+	}
+}
+
+- (void) loadMovieAtURL:(NSURL *)url
+{
 #if 1
+	if (viewstream) {
+		[viewstream stop];
+		[view setStream:nil];
+		[viewstream release];
+		viewstream = nil;
+	}
+	
 	// LAVPView test
 	viewstream = [[LAVPStream streamWithURL:url error:nil] retain];
 	
@@ -31,6 +54,13 @@
 #endif
 	
 #if 1
+	if (layerstream) {
+		[layerstream stop];
+		[layer setStream:nil];
+		[layerstream release];
+		layerstream = nil;
+	}
+	
 	// LAVPLayer test
 	layerstream =  [[LAVPStream streamWithURL:url error:nil] retain];
 	
@@ -151,6 +181,30 @@
 		}
 	}
 //	[layer setNeedsDisplay];
+}
+
+- (IBAction) openDocument:(id)sender
+{
+	// configure open sheet
+	NSOpenPanel *openPanel = [NSOpenPanel openPanel];
+	
+	// build completion block
+	void (^movieOpenPanelHandler)(NSInteger) = ^(NSInteger result)
+	{
+		if (result == NSFileHandlingPanelOKButton) {
+			// Load new movie
+			NSURL *newURL = [openPanel URL];
+			[openPanel close];
+			
+			[[NSUserDefaults standardUserDefaults] setURL:newURL forKey:@"url"];
+			[[NSUserDefaults standardUserDefaults] synchronize];
+			
+			[self loadMovieAtURL:newURL];
+		}
+	};
+	
+	// show sheet
+	[openPanel beginSheetModalForWindow:[NSApp mainWindow] completionHandler:movieOpenPanelHandler];
 }
 
 @end
