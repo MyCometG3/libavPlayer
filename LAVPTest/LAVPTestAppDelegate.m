@@ -25,10 +25,10 @@
 														   error:&error] autorelease];
 		if ( file ) {
 			[self loadMovieAtURL:url];
-		} else {
-			[self loadMovieAtURL:urlDefault];
+			return;
 		}
 	}
+	[self loadMovieAtURL:urlDefault];
 }
 
 - (void) loadMovieAtURL:(NSURL *)url
