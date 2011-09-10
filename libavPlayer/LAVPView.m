@@ -75,6 +75,17 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	return result;
 }
 
+- (void)windowChangedScreen:(NSNotification*)inNotification
+{
+	NSDictionary *dict = [[[self window] screen] deviceDescription];
+	CGDirectDisplayID newDisplayID = (CGDirectDisplayID)[[dict objectForKey:@"NSScreenNumber"] unsignedIntValue];
+	
+	if ((newDisplayID != 0) && (currentDisplayID != newDisplayID)) {
+		CVDisplayLinkSetCurrentCGDisplay(displayLink, newDisplayID);
+		currentDisplayID = newDisplayID;
+	}
+}
+
 - (uint64_t)startCVDisplayLink
 {
 	CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
@@ -93,6 +104,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) finalize
 {
+    // Resign observer
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	
 	// Stop and Release the display link first
 	[self stopCVDisplayLink];
 	CVDisplayLinkRelease(displayLink);
@@ -122,6 +136,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) dealloc
 {
+    // Resign observer
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	
 	// Stop and Release the display link first
 	[self stopCVDisplayLink];
 	CVDisplayLinkRelease(displayLink);
@@ -201,6 +218,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, self);
 		
 		[self startCVDisplayLink];
+		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
 	}
 	
 	return self;

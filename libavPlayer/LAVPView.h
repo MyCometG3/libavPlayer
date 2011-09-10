@@ -43,6 +43,8 @@
 	NSLock *lock;
 	
 	double_t lastPTS;
+	
+	CGDirectDisplayID currentDisplayID;
 }
 
 @property (assign) BOOL expandToFit;
