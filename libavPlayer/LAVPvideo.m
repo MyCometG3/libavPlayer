@@ -49,6 +49,7 @@ extern void copy_planar_YUV420_to_2vuy(size_t width, size_t height,
 									   uint8_t *baseAddr_u, size_t rowBytes_u, 
 									   uint8_t *baseAddr_v, size_t rowBytes_v, 
 									   uint8_t *baseAddr_2vuy, size_t rowBytes_2vuy);
+extern void CVF_CopyPlane(const UInt8* Sbase, int Sstride, int Srow, UInt8* Dbase, int Dstride, int Drow);
 #endif
 
 /* =========================================================== */
@@ -350,6 +351,11 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos)
 		pict.linesize[1] = vp->bmp->linesize[1];
 		pict.linesize[2] = vp->bmp->linesize[2];
 		
+#if ALLOW_GPL_CODE
+		CVF_CopyPlane((const UInt8 *)src_frame->data[0], src_frame->linesize[0], vp->height, pict.data[0], pict.linesize[0], vp->height);
+		CVF_CopyPlane((const UInt8 *)src_frame->data[1], src_frame->linesize[1], vp->height, pict.data[1], pict.linesize[1], vp->height/2);
+		CVF_CopyPlane((const UInt8 *)src_frame->data[2], src_frame->linesize[2], vp->height, pict.data[2], pict.linesize[2], vp->height/2);
+#else
 		av_image_copy_plane(pict.data[0], pict.linesize[0], 
 							(const uint8_t *)src_frame->data[0], src_frame->linesize[0], 
 							src_frame->linesize[0], vp->height);
@@ -359,6 +365,7 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos)
 		av_image_copy_plane(pict.data[2], pict.linesize[2], 
 							(const uint8_t *)src_frame->data[2], src_frame->linesize[2], 
 							src_frame->linesize[2], vp->height/2);
+#endif
 		
 		vp->pts = pts;
 		vp->pos = pos;

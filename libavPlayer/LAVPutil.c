@@ -164,3 +164,26 @@ void copy_planar_YUV420_to_2vuy(size_t width, size_t height,
 	free(temp_v_aligned);
 #endif
 }
+
+#define CVF_INLINE static inline
+
+CVF_INLINE int CVF_MIN(int a, int b) { return ((a > b) ? b : a); }
+
+void CVF_CopyPlane(const UInt8* Sbase, int Sstride, int Srow, UInt8* Dbase, int Dstride, int Drow) {
+	// Simple plane copy routine
+	// If same stride, it does one memcpy.
+	
+	int row, stride;
+	if(Sstride == Dstride) {
+		row = CVF_MIN(Drow, Srow);
+		memcpy(Dbase, Sbase, Sstride*row);
+	} else {
+		int line;
+		stride = CVF_MIN(Dstride, Sstride);
+		row = CVF_MIN(Drow, Srow);
+		for(line=0; line<row; line++) 
+			memcpy(Dbase+Dstride*line, Sbase+Sstride*line, stride);
+	}
+}
+
+#undef CVF_INLINE
