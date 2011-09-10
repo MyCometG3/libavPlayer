@@ -353,7 +353,7 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 		assert(err == 0 && outAQ != NULL);
 		
 		//
-		UInt32 inBufferByteSize = is->asbd.mSampleRate * is->asbd.mBytesPerFrame / 60;	// perform callback 60 times per sec
+		UInt32 inBufferByteSize = (is->asbd.mSampleRate / 50) * is->asbd.mBytesPerFrame;	// perform callback 50 times per sec
 		for( int i = 0; i < 3; i++ ) {
 			AudioQueueBufferRef outBuffer = NULL;
 			err = AudioQueueAllocateBuffer(is->outAQ, inBufferByteSize, &outBuffer);
