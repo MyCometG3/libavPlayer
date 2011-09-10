@@ -35,7 +35,6 @@ extern NSString * const LAVPStreamDidEndNotification;
 @private
 	LAVPDecoder *decoder;
 	uint64_t _htOffset;		// CVHostTime offset when play
-	double_t _rate;			// movie playback ratio
 	double_t _posOffset;	// movie time in {0.0, 1.0} 
 	NSTimer *timer;			// notification timer when EndOfMovie reached
 	BOOL _muted;
