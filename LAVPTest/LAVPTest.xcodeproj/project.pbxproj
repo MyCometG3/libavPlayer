@@ -237,6 +237,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = LAVPTest_Prefix.pch;
+				GCC_VERSION = 4.2;
 				INFOPLIST_FILE = "LAVPTest-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				PRODUCT_NAME = LAVPTest;
@@ -256,6 +257,7 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = LAVPTest_Prefix.pch;
+				GCC_VERSION = 4.2;
 				INFOPLIST_FILE = "LAVPTest-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				PRODUCT_NAME = LAVPTest;
