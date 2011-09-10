@@ -620,9 +620,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) setStream:(LAVPStream *)newStream
 {
-	//NSLog(@"setStream:");
-	
+	//
 	[lock lock];
+	[self stopCVDisplayLink];
 	
 	// Delete the texture and the FBO
 	if (FBOid) {
@@ -665,6 +665,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	lastPTS = -1;
 	[self setNeedsDisplay:YES];
 	
+	//
+	[self startCVDisplayLink];
 	[lock unlock];
 }
 

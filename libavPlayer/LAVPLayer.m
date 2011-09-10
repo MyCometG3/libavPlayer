@@ -722,8 +722,7 @@
 
 - (void) setStream:(LAVPStream *)newStream
 {
-	//NSLog(@"setStream:");
-	
+	//
 	[lock lock];
 	
 	// Delete the texture and the FBO
@@ -767,6 +766,7 @@
 	lastPTS = -1;
 	[self setNeedsDisplay];
 	
+	//
 	[lock unlock];
 }
 
