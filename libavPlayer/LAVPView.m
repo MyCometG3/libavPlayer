@@ -132,6 +132,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	
 	ciContext = NULL;
+	
+	[super finalize];
 }
 
 - (void) dealloc

@@ -76,6 +76,8 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 - (void) finalize
 {
 	[self invalidate];
+	
+	[super finalize];
 }
 
 - (void) dealloc

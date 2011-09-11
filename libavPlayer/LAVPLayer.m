@@ -73,6 +73,8 @@
 	ciContext = NULL;
 	
 	gravities = NULL;
+	
+	[super finalize];
 }
 
 - (void) dealloc
