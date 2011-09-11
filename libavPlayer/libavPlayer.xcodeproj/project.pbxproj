@@ -33,6 +33,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* libavPlayer.framework */; };
 		164826C013D399A2008E16A7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 164826BB13D39785008E16A7 /* AudioToolbox.framework */; };
 		166F893813E0555A00B74CCA /* LAVPthread.c in Sources */ = {isa = PBXBuildFile; fileRef = 166F893613E0555A00B74CCA /* LAVPthread.c */; };
 		166F893913E0555A00B74CCA /* LAVPthread.h in Headers */ = {isa = PBXBuildFile; fileRef = 166F893713E0555A00B74CCA /* LAVPthread.h */; };
@@ -58,7 +59,6 @@
 		16A1969B13ADFA00008825FF /* libavutil.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A18F8C13AC5536008825FF /* libavutil.a */; };
 		16A1969C13ADFA01008825FF /* libswscale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A18F8B13AC5536008825FF /* libswscale.a */; };
 		16A196A013ADFA23008825FF /* LAVPaudio.m in Sources */ = {isa = PBXBuildFile; fileRef = 16A193C513ADC268008825FF /* LAVPaudio.m */; };
-		16A196D313ADFB8E008825FF /* libavPlayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* libavPlayer.framework */; };
 		16A1971613ADFE22008825FF /* libavPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 16A1971513ADFE22008825FF /* libavPlayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		16E3B1C213BA0AE4000E6062 /* LAVPutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 16E3B1C113BA0AE4000E6062 /* LAVPutil.c */; };
 		16E3B23213BA752C000E6062 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A196F813ADFDC1008825FF /* Cocoa.framework */; };
@@ -79,10 +79,10 @@
 		16A1963F13ADF83E008825FF /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = "~/Library/Frameworks";
+			dstPath = /Library/Frameworks;
 			dstSubfolderSpec = 0;
 			files = (
-				16A196D313ADFB8E008825FF /* libavPlayer.framework in CopyFiles */,
+				1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -458,7 +458,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COPY_PHASE_STRIP = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1.0;
-				DYLIB_CURRENT_VERSION = 1.3;
+				DYLIB_CURRENT_VERSION = 1.4;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(HOME)/Library/Frameworks\"",
@@ -475,9 +475,9 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = libavPlayer_Prefix.pch;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_VERSION = 4.2;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = /Library/Frameworks;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/libav\"",
@@ -494,7 +494,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1.0;
-				DYLIB_CURRENT_VERSION = 1.3;
+				DYLIB_CURRENT_VERSION = 1.4;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(HOME)/Library/Frameworks\"",
@@ -504,9 +504,9 @@
 				GCC_ENABLE_OBJC_GC = supported;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = libavPlayer_Prefix.pch;
-				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_VERSION = 4.2;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Frameworks";
+				INSTALL_PATH = /Library/Frameworks;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SRCROOT)/libav\"",

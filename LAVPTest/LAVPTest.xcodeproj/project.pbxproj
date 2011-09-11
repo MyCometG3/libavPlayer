@@ -7,10 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		160E238913AE209800343DB2 /* libavPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 160E238813AE209800343DB2 /* libavPlayer.framework */; };
 		160E23BB13AE21D700343DB2 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 160E23BA13AE21D700343DB2 /* CoreVideo.framework */; };
 		1628D5A1141AFA0D0059161B /* ColorBars.mov in Resources */ = {isa = PBXBuildFile; fileRef = 1628D5A0141AFA0D0059161B /* ColorBars.mov */; };
 		16E1D03413B6A57C00336F40 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16E1D03313B6A57B00336F40 /* QuartzCore.framework */; };
+		16F7C157141C7A2500354672 /* libavPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16F7C156141C7A2500354672 /* libavPlayer.framework */; };
 		1DDD58160DA1D0A300B32029 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 1DDD58140DA1D0A300B32029 /* MainMenu.xib */; };
 		256AC3DA0F4B6AC300CF3369 /* LAVPTestAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 256AC3D90F4B6AC300CF3369 /* LAVPTestAppDelegate.m */; };
 		8D11072B0486CEB800E47090 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C165CFE840E0CC02AAC07 /* InfoPlist.strings */; };
@@ -20,12 +20,12 @@
 
 /* Begin PBXFileReference section */
 		089C165DFE840E0CC02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
+		1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
-		160E238813AE209800343DB2 /* libavPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libavPlayer.framework; path = /Users/takashi/Library/Frameworks/libavPlayer.framework; sourceTree = "<absolute>"; };
 		160E23BA13AE21D700343DB2 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
 		1628D5A0141AFA0D0059161B /* ColorBars.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = ColorBars.mov; sourceTree = "<group>"; };
 		16E1D03313B6A57B00336F40 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		16F7C156141C7A2500354672 /* libavPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libavPlayer.framework; path = /Library/Frameworks/libavPlayer.framework; sourceTree = "<absolute>"; };
 		1DDD58150DA1D0A300B32029 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		256AC3D80F4B6AC300CF3369 /* LAVPTestAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPTestAppDelegate.h; sourceTree = "<group>"; };
 		256AC3D90F4B6AC300CF3369 /* LAVPTestAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LAVPTestAppDelegate.m; sourceTree = "<group>"; };
@@ -43,9 +43,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */,
-				160E238913AE209800343DB2 /* libavPlayer.framework in Frameworks */,
 				160E23BB13AE21D700343DB2 /* CoreVideo.framework in Frameworks */,
 				16E1D03413B6A57C00336F40 /* QuartzCore.framework in Frameworks */,
+				16F7C157141C7A2500354672 /* libavPlayer.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -67,10 +67,10 @@
 				1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */,
 				16E1D03313B6A57B00336F40 /* QuartzCore.framework */,
 				160E23BA13AE21D700343DB2 /* CoreVideo.framework */,
-				160E238813AE209800343DB2 /* libavPlayer.framework */,
+				16F7C156141C7A2500354672 /* libavPlayer.framework */,
 			);
 			name = "Linked Frameworks";
-			sourceTree = "<group>";
+			sourceTree = SOURCE_ROOT;
 		};
 		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
 			isa = PBXGroup;
@@ -239,7 +239,7 @@
 				GCC_PREFIX_HEADER = LAVPTest_Prefix.pch;
 				GCC_VERSION = 4.2;
 				INFOPLIST_FILE = "LAVPTest-Info.plist";
-				INSTALL_PATH = "$(HOME)/Applications";
+				INSTALL_PATH = /Applications;
 				PRODUCT_NAME = LAVPTest;
 			};
 			name = Debug;
@@ -259,7 +259,7 @@
 				GCC_PREFIX_HEADER = LAVPTest_Prefix.pch;
 				GCC_VERSION = 4.2;
 				INFOPLIST_FILE = "LAVPTest-Info.plist";
-				INSTALL_PATH = "$(HOME)/Applications";
+				INSTALL_PATH = /Applications;
 				PRODUCT_NAME = LAVPTest;
 			};
 			name = Release;
