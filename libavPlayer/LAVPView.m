@@ -64,12 +64,17 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 	
 	LAVPView* obj = (LAVPView*)displayLinkContext;
-	double_t lastPTS = obj->lastPTS;
-	double_t rate = [obj->_stream rate];
-	
-	if (lastPTS < 0 || rate) 
-		result = [obj getFrameForTime:outputTime];
-	
+	if (obj->_stream) {
+		[obj->lock lock];
+		
+		double_t lastPTS = obj->lastPTS;
+		double_t rate = [obj->_stream rate];
+		
+		if (lastPTS < 0 || rate) 
+			result = [obj getFrameForTime:outputTime];
+		
+		[obj->lock unlock];
+	}
 	[pool drain];
 	
 	return result;
@@ -88,65 +93,41 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (uint64_t)startCVDisplayLink
 {
-	CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
-	CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
-	CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
-	
-	CVDisplayLinkStart(displayLink);
+	if (displayLink) {
+		CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
+		CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
+		CVDisplayLinkSetCurrentCGDisplayFromOpenGLContext(displayLink, cglContext, cglPixelFormat);
+		
+		if (_stream && !CVDisplayLinkIsRunning(displayLink)) 
+			CVDisplayLinkStart(displayLink);
+	}
 	return CVGetCurrentHostTime();
 }
 
 - (uint64_t)stopCVDisplayLink
 {
-	CVDisplayLinkStop(displayLink);
+	if (displayLink && CVDisplayLinkIsRunning(displayLink)) 
+		CVDisplayLinkStop(displayLink);
 	return CVGetCurrentHostTime();
 }
 
-- (void) finalize
+- (void)invalidate:(NSNotification*)inNotification
 {
-    // Resign observer
+	//NSLog(@"invalidate: !!!");
+	
+	// Resign observer
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
 	// Stop and Release the display link first
-	[self stopCVDisplayLink];
-	CVDisplayLinkRelease(displayLink);
-	
-	// Release stream
-	_stream = NULL;
-	
-	// Delete the texture and the FBO
-	if (FBOid) {
-		glDeleteTextures(1, &FBOTextureId);
-		glDeleteFramebuffersEXT(1, &FBOid);
-		FBOTextureId = 0;
-		FBOid = 0;
+	if (displayLink) {
+		[self stopCVDisplayLink];
+		CVDisplayLinkRelease(displayLink);
+		displayLink = NULL;
 	}
-	
-	lock = NULL;
-	
-	image = NULL;
-	
-	if (pixelbuffer) {
-		CVPixelBufferRelease(pixelbuffer);
-		pixelbuffer = NULL;
-	}
-	
-	ciContext = NULL;
-	
-	[super finalize];
-}
-
-- (void) dealloc
-{
-    // Resign observer
-	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	
-	// Stop and Release the display link first
-	[self stopCVDisplayLink];
-	CVDisplayLinkRelease(displayLink);
 	
 	// Release stream
 	if (_stream) {
+		[_stream stop];
 		[_stream release];
 		_stream = NULL;
 	}
@@ -175,6 +156,18 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		[ciContext release];
 		ciContext = NULL;
 	}
+}
+
+- (void) finalize
+{
+	[self invalidate:nil];
+	
+	[super finalize];
+}
+
+- (void) dealloc
+{
+	[self invalidate:nil];
 	
 	[super dealloc];
 }
@@ -222,6 +215,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		[self startCVDisplayLink];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
+		
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSApplicationWillTerminateNotification" object:nil];
 	}
 	
 	return self;
@@ -240,13 +235,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			}
 			lastPTS = pts;
 			
-			[lock lock];
 			[self setCVPixelBuffer:pb];
-			[lock unlock];
-			
-			// With help of CVDisplayLink, we can use -display instead of setNeedsDisplay.
 			[self display];
-			
+
 			return kCVReturnSuccess;
 		} else {
 			//NSLog(@"LAVPView: getFrameForTime: CVPixelBuffer is not ready.");
@@ -260,7 +251,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void)drawRect:(NSRect)theRect
 {
-	[lock lock];
+	BOOL success = [lock tryLock];
 	
 	// Update Image
 	[self drawImage];
@@ -268,7 +259,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	// Finishing touch by super class
 	[super drawRect:theRect];
 	
-	[lock unlock];
+	if (success) [lock unlock];
 }
 
 #pragma mark NSOpenGLView
@@ -623,8 +614,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 - (void) setStream:(LAVPStream *)newStream
 {
 	//
-	[lock lock];
 	[self stopCVDisplayLink];
+	[lock lock];
 	
 	// Delete the texture and the FBO
 	if (FBOid) {
@@ -635,6 +626,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	
 	//
+	[_stream stop];
 	[_stream autorelease];
 	_stream = [newStream retain];
 	
@@ -668,8 +660,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	[self setNeedsDisplay:YES];
 	
 	//
-	[self startCVDisplayLink];
 	[lock unlock];
+	[self startCVDisplayLink];
 }
 
 @end
