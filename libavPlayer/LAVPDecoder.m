@@ -52,8 +52,6 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 
 @implementation LAVPDecoder
 
-@synthesize abort;
-
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr
 {
 	self = [super init];
@@ -83,9 +81,15 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 - (void) invalidate
 {
 	// perform clean up
-	if (is && !self.abort) {
-		self.abort = YES;
-		[NSThread sleepForTimeInterval:0.1];
+	if (is && is->decoderThread) {
+		NSThread *dt = is->decoderThread;
+		[dt retain];
+		[dt cancel];
+		while (![dt isFinished]) {
+			usleep(10*1000);
+		}
+		[dt release];
+		dt = NULL;
 		
 		stream_close(is);
 		is = NULL;
@@ -126,7 +130,8 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	[runLoop addTimer:timer forMode:NSRunLoopCommonModes];
 	
 	// 
-	while ( self.abort != YES ) {
+	NSThread *dt = [NSThread currentThread];
+	while ( ![dt isCancelled] ) {
 		NSAutoreleasePool *p = [NSAutoreleasePool new];
 		
 		//NSLog(@"pos = %04.3f (sec)", [self position]/1.0e6);

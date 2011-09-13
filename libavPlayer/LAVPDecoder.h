@@ -28,13 +28,10 @@
 #include "LAVPCommon.h"
 
 @interface LAVPDecoder : NSObject {
-	BOOL abort;
 @private	
 	VideoState *is;
 	CVPixelBufferRef pb;
 }
-
-@property (assign) BOOL abort;
 
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr;
 - (void) invalidate;
