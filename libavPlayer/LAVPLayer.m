@@ -48,39 +48,16 @@
 
 @implementation LAVPLayer
 
-- (void) finalize
+- (void)invalidate:(NSNotification*)inNotification
 {
-	// Release stream
-	_stream = NULL;
+	//NSLog(@"invalidate:");
 	
-	// Delete the texture and the FBO
-	if (FBOid) {
-		glDeleteTextures(1, &FBOTextureId);
-		glDeleteFramebuffersEXT(1, &FBOid);
-		FBOTextureId = 0;
-		FBOid = 0;
-	}
+	// Resign observer
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
 	
-	lock = NULL;
-	
-	image = NULL;
-	
-	if (pixelbuffer) {
-		CVPixelBufferRelease(pixelbuffer);
-		pixelbuffer = NULL;
-	}
-	
-	ciContext = NULL;
-	
-	gravities = NULL;
-	
-	[super finalize];
-}
-
-- (void) dealloc
-{
 	// Release stream
 	if (_stream) {
+		[_stream stop];
 		[_stream release];
 		_stream = NULL;
 	}
@@ -113,6 +90,18 @@
 		[gravities release];
 		gravities = NULL;
 	}
+}
+
+- (void) finalize
+{
+	[self invalidate:nil];
+	
+	[super finalize];
+}
+
+- (void) dealloc
+{
+	[self invalidate:nil];
 	
 	[super dealloc];
 }
@@ -185,6 +174,8 @@
 		// Restore CGLContext
 		CGLUnlockContext(_cglContext);
 		CGLSetCurrentContext(savedContext);
+		
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSApplicationWillTerminateNotification" object:nil];
 	}
 	
 	return self;
@@ -725,6 +716,7 @@
 - (void) setStream:(LAVPStream *)newStream
 {
 	//
+	self.asynchronous = NO;
 	[lock lock];
 	
 	// Delete the texture and the FBO
@@ -770,6 +762,7 @@
 	
 	//
 	[lock unlock];
+	self.asynchronous = YES;
 }
 
 @end
