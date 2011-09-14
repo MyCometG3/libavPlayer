@@ -122,20 +122,25 @@
 
 - (void) windowWillClose:(NSNotification *)notification
 {
+	//NSLog(@"LAVPTest: -windowWillClose:");
 	NSWindow *obj = [notification object];
 	if (obj == layerwindow) {
-		NSLog(@"layerwindow closed.");
+		NSLog(@"layerwindow closing...");
 		[layerstream stop];
 		[layer setStream:nil];
 		[layerstream release];
 		layerstream = nil;
+		layer = nil;
+		NSLog(@"layerwindow closed.");
 	}
 	if (obj == viewwindow) {
-		NSLog(@"viewwindow closed.");
+		NSLog(@"viewwindow closing...");
 		[viewstream stop];
 		[view setStream:nil];
 		[viewstream release];
 		viewstream = nil;
+		view = nil;
+		NSLog(@"viewwindow closed.");
 	}
 }
 
