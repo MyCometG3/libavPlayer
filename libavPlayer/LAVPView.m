@@ -111,9 +111,15 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	return CVGetCurrentHostTime();
 }
 
+#pragma mark -
+
 - (void)invalidate:(NSNotification*)inNotification
 {
-	//NSLog(@"invalidate: !!!");
+	BOOL isWindow = [[inNotification object] isKindOfClass:[NSWindow class]];
+	BOOL different = ([self window] != [inNotification object]);
+	if (isWindow && different) return;
+	
+	//NSLog(@"invalidate: (from window:%@)", (isWindow ? @"YES" : @"NO"));
 	
 	// Resign observer
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -217,6 +223,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
 		
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSApplicationWillTerminateNotification" object:nil];
+		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSWindowWillCloseNotification" object:nil];
 	}
 	
 	return self;
