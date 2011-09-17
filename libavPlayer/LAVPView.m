@@ -93,6 +93,11 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (uint64_t)startCVDisplayLink
 {
+	if (!displayLink) {
+		CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
+		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, self);
+	}
+	
 	if (displayLink) {
 		CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
 		CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
@@ -106,8 +111,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (uint64_t)stopCVDisplayLink
 {
-	if (displayLink && CVDisplayLinkIsRunning(displayLink)) 
-		CVDisplayLinkStop(displayLink);
+	if (displayLink) {
+		if (CVDisplayLinkIsRunning(displayLink)) {
+			CVDisplayLinkStop(displayLink);
+		}
+		CVDisplayLinkRelease(displayLink);
+		displayLink = NULL;
+	}
 	return CVGetCurrentHostTime();
 }
 
@@ -127,8 +137,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	// Stop and Release the display link first
 	if (displayLink) {
 		[self stopCVDisplayLink];
-		CVDisplayLinkRelease(displayLink);
-		displayLink = NULL;
 	}
 	
 	// Release stream
@@ -213,12 +221,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		// Turn on VBL syncing for swaps
 		GLint syncVBL = 1;
 		[[self openGLContext] setValues:&syncVBL forParameter:NSOpenGLCPSwapInterval];
-		
-		// Create and start CVDisplayLink
-		CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, self);
-		
-		[self startCVDisplayLink];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
 		
