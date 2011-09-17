@@ -473,11 +473,13 @@
 #if 0
 		// Debug - checkered pattern
 		const size_t unit = 40;
+		static size_t val = 0;
+		val = val<unit ? ++val : 0;
 		glColor3f(0.5f, 0.5f, 0.5f);
 		for (int x = 0; x<textureRect.size.width; x+=unit) 
 			for (int y = 0; y<textureRect.size.height; y+=unit)
 				if ((x + y)/unit & 1) 
-					glRectd(x, y, x+unit, y+unit);
+					glRectd(x, y, x+val, y+val);
 #endif
 	}
 	
