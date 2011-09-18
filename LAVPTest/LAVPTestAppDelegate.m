@@ -13,6 +13,29 @@
 @synthesize viewwindow;
 @synthesize layerwindow;
 
+- (void)startTimer
+{
+	timer = [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(updatePos:) userInfo:nil repeats:YES];
+}
+
+- (void)stopTimer
+{
+	if (timer) {
+		[timer invalidate];
+		timer = nil;
+	}
+}
+
+- (void)updatePos:(NSTimer*)theTimer
+{
+	if (layerwindow) {
+		[self setValue:[NSNumber numberWithDouble:layerstream.position ] forKey:@"layerPos"];
+	}
+	if (viewwindow) {
+		[self setValue:[NSNumber numberWithDouble:viewstream.position ] forKey:@"viewPos"];
+	}
+}
+
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
 	// Restore prev movie (on start up)
 	NSURL *url = [[NSUserDefaults standardUserDefaults] URLForKey:@"url"];
@@ -29,10 +52,15 @@
 		}
 	}
 	[self loadMovieAtURL:urlDefault];
+	
+	timer = nil;
 }
 
 - (void) loadMovieAtURL:(NSURL *)url
 {
+	if (layerstream || viewstream) {
+		[self stopTimer];
+	}
 #if 1
 	if (viewwindow) {
 		if (viewstream) {
@@ -65,24 +93,9 @@
 		layerstream =  [[LAVPStream streamWithURL:url error:nil] retain];
 		
 		//
-		[[layerwindow contentView] setWantsLayer:YES];
-		CALayer *contentLayer = [[layerwindow contentView] layer];
-		
-		//
-		CALayer *rootLayer;
-	#if 1
-		rootLayer = contentLayer;
-	#else
-		rootLayer = [CALayer new];
-		rootLayer.bounds = contentLayer.bounds;
-		rootLayer.frame = contentLayer.frame;
-		rootLayer.position = CGPointMake(contentLayer.bounds.size.width/2.0, contentLayer.bounds.size.height/2.0);
-		rootLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-		
-		contentLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
-		contentLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-		[contentLayer addSublayer:rootLayer];
-	#endif
+		[layerView setWantsLayer:YES];
+		CALayer *rootLayer = [layerView layer];
+		rootLayer.needsDisplayOnBoundsChange = YES;
 		
 		//
 		layer = [LAVPLayer layer];
@@ -112,6 +125,9 @@
 
 	}
 #endif
+	if (layerstream || viewstream) {
+		[self startTimer];
+	}
 }
 
 - (BOOL) applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)sender
@@ -209,6 +225,28 @@
 	
 	// show sheet
 	[openPanel beginSheetModalForWindow:[NSApp mainWindow] completionHandler:movieOpenPanelHandler];
+}
+
+- (IBAction) rewindStream:(id)sender
+{
+	NSButton *button = (NSButton*) sender;
+	if ([button window] == layerwindow) {
+		[layerstream gotoBeggining];
+	}
+	if ([button window] == viewwindow) {
+		[viewstream gotoBeggining];
+	}
+}
+
+- (IBAction) updatePosition:(id)sender
+{
+	NSScroller *pos = (NSScroller*) sender;
+	if ([pos window] == layerwindow) {
+		[layerstream setPosition:[sender doubleValue]];
+	}
+	if ([pos window] == viewwindow) {
+		[viewstream setPosition:[sender doubleValue]];
+	}
 }
 
 @end

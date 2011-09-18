@@ -12,10 +12,15 @@
 	IBOutlet NSWindow *viewwindow;
 	IBOutlet LAVPView *view;
 	LAVPStream *viewstream;
+	double_t viewPos;
 	
 	IBOutlet NSWindow *layerwindow;
+	IBOutlet NSView *layerView;
 	LAVPLayer *layer;
 	LAVPStream *layerstream;
+	double_t layerPos;
+	
+	NSTimer *timer;
 }
 
 @property (assign) IBOutlet NSWindow *viewwindow;
@@ -25,5 +30,7 @@
 
 - (IBAction) togglePlayView:(id)sender;
 - (IBAction) togglePlayLayer:(id)sender;
+- (IBAction) rewindStream:(id)sender;
+- (IBAction) updatePosition:(id)sender;
 
 @end
