@@ -34,84 +34,83 @@
 - (void) loadMovieAtURL:(NSURL *)url
 {
 #if 1
-	if (viewstream) {
-		[viewstream stop];
-		[view setStream:nil];
-		[viewstream release];
-		viewstream = nil;
+	if (viewwindow) {
+		if (viewstream) {
+			[viewstream stop];
+			[view setStream:nil];
+			[viewstream release];
+			viewstream = nil;
+		}
+		
+		// LAVPView test
+		viewstream = [[LAVPStream streamWithURL:url error:nil] retain];
+		
+		[view setExpandToFit:YES];
+		
+		//
+		[view setStream:viewstream];
 	}
-	
-	// LAVPView test
-	viewstream = [[LAVPStream streamWithURL:url error:nil] retain];
-	
-	[view setExpandToFit:YES];
-	
-	//
-	[view setStream:viewstream];
-	
-//	[view setNeedsDisplay:YES];
-//	[stream gotoBeggining];
 #endif
 	
 #if 1
-	if (layerstream) {
-		[layerstream stop];
-		[layer setStream:nil];
-		[layerstream release];
-		layerstream = nil;
+	if (layerwindow) {
+		if (layerstream) {
+			[layerstream stop];
+			[layer setStream:nil];
+			[layerstream release];
+			layerstream = nil;
+		}
+		
+		// LAVPLayer test
+		layerstream =  [[LAVPStream streamWithURL:url error:nil] retain];
+		
+		//
+		[[layerwindow contentView] setWantsLayer:YES];
+		CALayer *contentLayer = [[layerwindow contentView] layer];
+		
+		//
+		CALayer *rootLayer;
+	#if 1
+		rootLayer = contentLayer;
+	#else
+		rootLayer = [CALayer new];
+		rootLayer.bounds = contentLayer.bounds;
+		rootLayer.frame = contentLayer.frame;
+		rootLayer.position = CGPointMake(contentLayer.bounds.size.width/2.0, contentLayer.bounds.size.height/2.0);
+		rootLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+		
+		contentLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
+		contentLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+		[contentLayer addSublayer:rootLayer];
+	#endif
+		
+		//
+		layer = [LAVPLayer layer];
+		
+	//	layer.contentsGravity = kCAGravityBottomRight;
+	//	layer.contentsGravity = kCAGravityBottomLeft;
+	//	layer.contentsGravity = kCAGravityTopRight;
+	//	layer.contentsGravity = kCAGravityTopLeft;
+	//	layer.contentsGravity = kCAGravityRight;
+	//	layer.contentsGravity = kCAGravityLeft;
+	//	layer.contentsGravity = kCAGravityBottom;
+	//	layer.contentsGravity = kCAGravityTop;
+	//	layer.contentsGravity = kCAGravityCenter;
+	//	layer.contentsGravity = kCAGravityResize;
+		layer.contentsGravity = kCAGravityResizeAspect;
+	//	layer.contentsGravity = kCAGravityResizeAspectFill;
+		
+		layer.frame = rootLayer.frame;
+	//	layer.bounds = rootLayer.bounds;
+	//	layer.position = rootLayer.position;
+		layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+		layer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
+		
+		//
+		[layer setStream:layerstream];
+		[rootLayer addSublayer:layer];
+
 	}
-	
-	// LAVPLayer test
-	layerstream =  [[LAVPStream streamWithURL:url error:nil] retain];
-	
-	//
-	[[layerwindow contentView] setWantsLayer:YES];
-	CALayer *contentLayer = [[layerwindow contentView] layer];
-	
-	//
-	CALayer *rootLayer;
-#if 1
-	rootLayer = contentLayer;
-#else
-	rootLayer = [CALayer new];
-	rootLayer.bounds = contentLayer.bounds;
-	rootLayer.frame = contentLayer.frame;
-	rootLayer.position = CGPointMake(contentLayer.bounds.size.width/2.0, contentLayer.bounds.size.height/2.0);
-	rootLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-	
-	contentLayer.layoutManager = [CAConstraintLayoutManager layoutManager];
-	contentLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-	[contentLayer addSublayer:rootLayer];
-#endif
-	
-	//
-	layer = [LAVPLayer layer];
-	
-//	layer.contentsGravity = kCAGravityBottomRight;
-//	layer.contentsGravity = kCAGravityBottomLeft;
-//	layer.contentsGravity = kCAGravityTopRight;
-//	layer.contentsGravity = kCAGravityTopLeft;
-//	layer.contentsGravity = kCAGravityRight;
-//	layer.contentsGravity = kCAGravityLeft;
-//	layer.contentsGravity = kCAGravityBottom;
-//	layer.contentsGravity = kCAGravityTop;
-//	layer.contentsGravity = kCAGravityCenter;
-//	layer.contentsGravity = kCAGravityResize;
-	layer.contentsGravity = kCAGravityResizeAspect;
-//	layer.contentsGravity = kCAGravityResizeAspectFill;
-	
-	layer.frame = rootLayer.frame;
-//	layer.bounds = rootLayer.bounds;
-//	layer.position = rootLayer.position;
-	layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-	layer.backgroundColor = CGColorGetConstantColor(kCGColorBlack);
-	
-	//
-	[layer setStream:layerstream];
-	[rootLayer addSublayer:layer];
-	
-//	[layer setNeedsDisplay];
-//	[layerstream gotoBeggining];
 #endif
 }
 
@@ -130,7 +129,7 @@
 		[layer setStream:nil];
 		[layerstream release];
 		layerstream = nil;
-		layer = nil;
+		layerwindow = nil;
 		NSLog(@"layerwindow closed.");
 	}
 	if (obj == viewwindow) {
@@ -139,7 +138,7 @@
 		[view setStream:nil];
 		[viewstream release];
 		viewstream = nil;
-		view = nil;
+		viewwindow = nil;
 		NSLog(@"viewwindow closed.");
 	}
 }
