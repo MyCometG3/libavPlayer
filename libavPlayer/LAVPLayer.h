@@ -33,6 +33,8 @@
 	CIImage *image;
 	CVPixelBufferRef pixelbuffer;
 	CGRect prevRect;
+	NSLock *lock;
+	double_t lastPTS;
 	
 	GLuint	FBOid;
 	GLuint	FBOTextureId;
@@ -44,9 +46,6 @@
 	
 	NSArray *gravities;
 	
-	NSLock *lock;
-	
-	double_t lastPTS;
 }
 
 @property (retain) LAVPStream *stream;

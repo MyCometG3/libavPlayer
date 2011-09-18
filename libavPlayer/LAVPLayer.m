@@ -32,8 +32,7 @@
 
 @interface LAVPLayer (private)
 
-- (void) prepareOpenGL;
-
+- (void) initOpenGL;
 - (void) drawImage;
 - (void) setCIContext;
 - (void) setFBO;
@@ -86,9 +85,18 @@
 		[ciContext release];
 		ciContext = NULL;
 	}
+	
 	if (gravities) {
 		[gravities release];
 		gravities = NULL;
+	}
+	if (_cglContext) {
+		[self releaseCGLContext:_cglContext];
+		_cglContext = NULL;
+	}
+	if (_cglPixelFormat) {
+		[self releaseCGLPixelFormat:_cglPixelFormat];
+		_cglPixelFormat = NULL;
 	}
 }
 
@@ -149,21 +157,15 @@
 		_cglContext = [super copyCGLContextForPixelFormat:_cglPixelFormat];
 		assert(_cglContext);
 		
+		/* ========================================================= */
+		
 		// Force CGLContext
 		CGLContextObj savedContext = CGLGetCurrentContext();
 		CGLSetCurrentContext(_cglContext);
 		CGLLockContext(_cglContext);
 		
 		// 
-		[self prepareOpenGL];
-		
-		/* ========================================================= */
-		
-		// Create Initial CVPixelBuffer and CIImage
-		//[self setCVPixelBuffer:NULL];
-		
-		lock = [[NSLock alloc] init];
-		lastPTS = -1;
+		[self initOpenGL];
 		
 		// Turn on VBL syncing for swaps
 		self.asynchronous = YES;
@@ -175,7 +177,14 @@
 		CGLUnlockContext(_cglContext);
 		CGLSetCurrentContext(savedContext);
 		
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSApplicationWillTerminateNotification" object:nil];
+		/* ========================================================= */
+		
+		//
+		lock = [[NSLock alloc] init];
+		lastPTS = -1;
+		
+		//
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSApplicationWillTerminateNotification object:nil];
 	}
 	
 	return self;
@@ -212,22 +221,14 @@
 				forLayerTime:(CFTimeInterval)timeInterval 
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
-	if (!_stream) return NO;
-	if (NSEqualSizes([_stream frameSize], NSZeroSize)) return NO;
-	
-#if 0
-	return YES;
-#endif
-	
-	if (!CGRectEqualToRect(prevRect, [self bounds])) {
-		prevRect = [self bounds];
-		return YES;
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+		if (!timeStamp) 
+			return [_stream readyForCurrent];
+		else
+			return [_stream readyForTime:timeStamp];
+	} else {
+		return NO;
 	}
-	
-	if (!timeStamp) 
-		return [_stream readyForCurrent];
-	else
-		return [_stream readyForTime:timeStamp];
 }
 
 - (void) drawInCGLContext:(CGLContextObj)glContext 
@@ -235,10 +236,21 @@
 			 forLayerTime:(CFTimeInterval)timeInterval 
 			  displayTime:(const CVTimeStamp *)timeStamp
 {
-	[lock lock];
+	// Check layer resize
+	BOOL resized = NO;
+	if (!CGRectEqualToRect(prevRect, [self bounds])) {
+		prevRect = [self bounds];
+		resized = YES;
+	}
 	
-	// Prepare CIImage
-	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+	// Check pause
+	BOOL paused = NO;
+	if ( [_stream rate] == 0 && lastPTS >= 0) {
+		paused = YES;
+	}
+	
+	if (!paused) {
+		// Prepare CIImage
 		CVPixelBufferRef pb;
 		double_t pts;
 		
@@ -246,23 +258,30 @@
 			pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
 		else
 			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
-		if (pb) {
+		
+		if (pb && lastPTS != pts) {
 			lastPTS = pts;
 			
+			[lock lock];
 			[self setCVPixelBuffer:pb];
+			[self drawImage];
+			[lock unlock];
 		}
+		
+		goto bail;
+	}
+	if (resized || !paused) {
+		[lock lock];
+		[self drawImage];
+		[lock unlock];
 	}
 	
-	// Update texture and draw quad
-	[self drawImage];
-	
+bail:
 	// Finishing touch by super class
 	[super drawInCGLContext:glContext 
 				pixelFormat:pixelFormat 
 			   forLayerTime:timeInterval 
 				displayTime:timeStamp];
-	
-	[lock unlock];
 }
 
 /* =============================================================================================== */
@@ -273,7 +292,7 @@
 /*
  Set up performed only once 
  */
-- (void) prepareOpenGL {
+- (void) initOpenGL {
 	// Clear to black.
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
@@ -300,17 +319,6 @@
 	
 	/* ========================================================= */
 	
-	//	GLint  viewport[ 4 ];
-	
-	//	// Preserve matrices
-	//	glGetIntegerv( GL_VIEWPORT, viewport );
-	//	glMatrixMode( GL_PROJECTION );
-	//	glPushMatrix();
-	//	glMatrixMode( GL_MODELVIEW );
-	//	glPushMatrix();
-	
-	/* ========================================================= */
-	
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
 		// Prepare CIContext
 		[self setCIContext];
@@ -324,6 +332,15 @@
 		// Render quad
 		[self renderQuad];
 		
+#if 0	// Not sure if it is required on CALayer yet
+		// Delete the texture and the FBO
+		if (FBOid) {
+			glDeleteTextures(1, &FBOTextureId);
+			glDeleteFramebuffersEXT(1, &FBOid);
+			FBOTextureId = 0;
+			FBOid = 0;
+		}
+#endif
 	} else {
 		NSSize dstSize = [self bounds].size;
 		
@@ -339,15 +356,6 @@
 		glClearColor(0 , 0 , 0 , 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
-	
-	/* ========================================================= */
-	
-	//	// Restore matrices
-	//	glViewport( viewport[ 0 ], viewport[ 1 ], viewport[ 2 ], viewport[ 3 ] );
-	//	glMatrixMode( GL_PROJECTION );
-	//	glPopMatrix();
-	//	glMatrixMode( GL_MODELVIEW );
-	//	glPopMatrix();
 	
 	/* ========================================================= */
 	

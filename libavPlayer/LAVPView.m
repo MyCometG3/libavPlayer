@@ -34,9 +34,9 @@
 
 - (uint64_t)startCVDisplayLink;
 - (uint64_t)stopCVDisplayLink;
+- (CVReturn)drawFrameForTime:(const CVTimeStamp*)outputTime;
 
-- (CVReturn)getFrameForTime:(const CVTimeStamp*)outputTime;
-
+- (void) initOpenGL;
 - (void) drawImage;
 - (void) setCIContext;
 - (void) setFBO;
@@ -50,6 +50,7 @@
 @end
 
 @implementation LAVPView
+
 @synthesize expandToFit = _expandToFit;
 
 static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink, 
@@ -63,18 +64,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 	
-	LAVPView* obj = (LAVPView*)displayLinkContext;
-	if (obj->_stream) {
-		[obj->lock lock];
-		
-		double_t lastPTS = obj->lastPTS;
-		double_t rate = [obj->_stream rate];
-		
-		if (lastPTS < 0 || rate) 
-			result = [obj getFrameForTime:outputTime];
-		
-		[obj->lock unlock];
-	}
+	result = [(LAVPView*)displayLinkContext drawFrameForTime:outputTime];
+	
 	[pool drain];
 	
 	return result;
@@ -121,23 +112,24 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	return CVGetCurrentHostTime();
 }
 
+/* =============================================================================================== */
 #pragma mark -
+/* =============================================================================================== */
 
 - (void)invalidate:(NSNotification*)inNotification
 {
+	// Check if sender is my window or not
 	BOOL isWindow = [[inNotification object] isKindOfClass:[NSWindow class]];
 	BOOL different = ([self window] != [inNotification object]);
 	if (isWindow && different) return;
 	
 	//NSLog(@"invalidate: (from window:%@)", (isWindow ? @"YES" : @"NO"));
 	
+	// Stop and Release the display link first
+	[self stopCVDisplayLink];
+	
 	// Resign observer
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
-	
-	// Stop and Release the display link first
-	if (displayLink) {
-		[self stopCVDisplayLink];
-	}
 	
 	// Release stream
 	if (_stream) {
@@ -196,7 +188,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		NSOpenGLPFADoubleBuffer,
 		NSOpenGLPFAColorSize, 24,
 		NSOpenGLPFAAlphaSize,  8,
-		//NSOpenGLPFADepthSize, 32,	// no depth buffer
+		//NSOpenGLPFADepthSize, 16,	// no depth buffer
 		NSOpenGLPFAMultisample,
 		NSOpenGLPFASampleBuffers, 1,
 		NSOpenGLPFASamples, 4,
@@ -209,75 +201,121 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	self = [super initWithFrame:frameRect pixelFormat:pixelFormat];
 	
 	if (self) {
-		// Create Initial CVPixelBuffer and CIImage
-		//[self setCVPixelBuffer:NULL];
+		// Force NSOpenGLContext
+		NSOpenGLContext *savedContext = [NSOpenGLContext currentContext];
+		[[self openGLContext] makeCurrentContext];
+		CGLLockContext([[self openGLContext] CGLContextObj]);
 		
-		lock = [[NSLock alloc] init];
-		lastPTS = -1;
-		
-		// Set default value
-		_expandToFit = NO;
+		// 
+		[self initOpenGL];
 		
 		// Turn on VBL syncing for swaps
 		GLint syncVBL = 1;
 		[[self openGLContext] setValues:&syncVBL forParameter:NSOpenGLCPSwapInterval];
 		
+		// Restore NSOpenGLContext
+		CGLUnlockContext([[self openGLContext] CGLContextObj]);
+		[savedContext makeCurrentContext];
+		
+		/* ========================================================= */
+		
+		// Set default value
+		_expandToFit = NO;
+		
+		//
+		lock = [[NSLock alloc] init];
+		lastPTS = -1;
+		
+		//
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSApplicationWillTerminateNotification object:nil];
+		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSWindowWillCloseNotification object:nil];
+		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
-		
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSApplicationWillTerminateNotification" object:nil];
-		
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:@"NSWindowWillCloseNotification" object:nil];
 	}
 	
 	return self;
 }
 
-- (CVReturn)getFrameForTime:(const CVTimeStamp*)ts
-{
-	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
-		CVPixelBufferRef pb;
-		double_t pts;
-		
-		pb = [_stream getCVPixelBufferForTime:ts asPTS:&pts];
-		if (pb) {
-			if (lastPTS == pts) {
-				return kCVReturnError;
-			}
-			lastPTS = pts;
-			
-			[self setCVPixelBuffer:pb];
-			[self display];
-
-			return kCVReturnSuccess;
-		} else {
-			//NSLog(@"LAVPView: getFrameForTime: CVPixelBuffer is not ready.");
-		}
-	} else {
-		//NSLog(@"LAVPView: getFrameForTime: stream is not ready.");
-	}
-	
-	return kCVReturnError;
-}
+/* =============================================================================================== */
+#pragma mark -
+/* =============================================================================================== */
 
 - (void)drawRect:(NSRect)theRect
 {
-	BOOL success = [lock tryLock];
-	
 	// Update Image
+	[lock lock];
 	[self drawImage];
+	[lock unlock];
 	
 	// Finishing touch by super class
 	[super drawRect:theRect];
-	
-	if (success) [lock unlock];
 }
 
-#pragma mark NSOpenGLView
+/* =============================================================================================== */
+#pragma mark -
+#pragma mark private
+/* =============================================================================================== */
+
+- (CVReturn)drawFrameForTime:(const CVTimeStamp*)timeStamp
+{
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+		if (![_stream readyForTime:timeStamp]) {
+			return kCVReturnError;
+		}
+		
+		// Check layer resize
+		BOOL resized = NO;
+		if (!NSEqualRects(prevRect, [self bounds])) {
+			prevRect = [self bounds];
+			resized = YES;
+		}
+		
+		// Check pause
+		BOOL paused = NO;
+		if ( [_stream rate] == 0 && lastPTS >= 0) {
+			paused = YES;
+		}
+		
+		if (!paused) {
+			// Prepare CIImage
+			CVPixelBufferRef pb;
+			double_t pts;
+			
+			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
+			
+			if (pb && lastPTS != pts) {
+				lastPTS = pts;
+				
+				[lock lock];
+				[self setCVPixelBuffer:pb];
+				[self drawImage];
+				[lock unlock];
+				
+				return kCVReturnSuccess;
+			}
+			
+			return kCVReturnError;
+		}
+		if (resized || !paused) {
+			[lock lock];
+			[self drawImage];
+			[lock unlock];
+			
+			return kCVReturnSuccess;
+		}
+		
+		return kCVReturnError;
+	} else {
+		//NSLog(@"LAVPView: getFrameForTime: stream is not ready.");
+		return kCVReturnError;
+	}
+}
 
 /*
  Set up performed only once 
  */
-- (void)prepareOpenGL {
+- (void)initOpenGL {
 	// Clear to black.
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	
@@ -293,12 +331,15 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	assert(isFBO == GL_TRUE);
 }
 
-#pragma mark private
-
 /*
  Draw CVImageBuffer into CGLContext
  */
 - (void) drawImage {
+	//
+	NSOpenGLContext *savedContext = [NSOpenGLContext currentContext];
+	[[self openGLContext] makeCurrentContext];
+	CGLLockContext([[self openGLContext] CGLContextObj]);
+	
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
 		// Prepare CIContext
 		[self setCIContext];
@@ -312,6 +353,15 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		// Render quad
 		[self renderQuad];
 		
+#if 1	// Under CVDisplayLink, reusing FBO makes OpenGL unstable...
+		// Delete the texture and the FBO
+		if (FBOid) {
+			glDeleteTextures(1, &FBOTextureId);
+			glDeleteFramebuffersEXT(1, &FBOid);
+			FBOTextureId = 0;
+			FBOid = 0;
+		}
+#endif
 	} else {
 		NSSize dstSize = [self bounds].size;
 		
@@ -327,11 +377,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		glClearColor(0 , 0 , 0 , 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
+	
+	//
+	CGLUnlockContext([[self openGLContext] CGLContextObj]);
+	[savedContext makeCurrentContext];
+	
+	[[self openGLContext] flushBuffer];
 }
-
-/* =============================================================================================== */
-#pragma mark -
-/* =============================================================================================== */
 
 /*
  Check CIContext and recreate if required

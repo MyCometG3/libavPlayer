@@ -33,17 +33,16 @@
 	CIContext *ciContext;
 	CIImage *image;
 	CVPixelBufferRef pixelbuffer;
-	CVDisplayLinkRef displayLink;
+	NSRect prevRect;
+	NSLock *lock;
+	double_t lastPTS;
 	
 	GLuint	FBOid;
 	GLuint	FBOTextureId;
 	GLfloat	imageAspectRatio;
 	CGRect	textureRect;	// Could be smaller than original CIImage extent
 	
-	NSLock *lock;
-	
-	double_t lastPTS;
-	
+	CVDisplayLinkRef displayLink;
 	CGDirectDisplayID currentDisplayID;
 }
 
