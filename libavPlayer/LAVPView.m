@@ -232,6 +232,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSWindowWillCloseNotification object:nil];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
+		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
 	}
 	
 	return self;
@@ -243,6 +245,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void)drawRect:(NSRect)theRect
 {
+	if (!_stream.busy) return;
+	
 	// Update Image
 	[lock lock];
 	[self drawImage];
@@ -259,7 +263,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (CVReturn)drawFrameForTime:(const CVTimeStamp*)timeStamp
 {
-	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
 		if (![_stream readyForTime:timeStamp]) {
 			return kCVReturnError;
 		}
@@ -664,6 +668,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	image = [[CIImage imageWithCVImageBuffer:pixelbuffer] retain];
 }
 
+- (void) streamDidSeek:(NSNotification *)aNotification
+{
+	id sender = [aNotification object];
+	if (sender == _stream) {
+		lastPTS = -1;
+	}
+}
 
 /* =============================================================================================== */
 #pragma mark -

@@ -332,19 +332,22 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		stream_seek(is, ts, 0, 0);
 		
 		// seek wait - blocking
-		int retry = 100;	// 1.0sec max
+		int retry = 150;	// 1.5sec max
 		double_t rate = [self rate];
-		if (rate == 0.0) [self setRate:1.0];
+		double_t drift = (rate == 0.0) ? 1.0/15 : 1.0/5;
+		
+		[self setRate:4.0];
 		while (retry--) {
 			usleep(10*1000);
 			double_t master = get_master_clock(is);
 			double_t request = ts/1.0e6;
-			double_t diff = fabs(master-request);
+			double_t diff = fabs(master - request);
 			
-			if (!is->seek_req && diff < 1.0/15) 
+			if (!is->seek_req && diff < drift) 
 				break;
 		}
-		if (rate == 0.0) [self setRate:0.0];
+		[self setRate:rate];
+		
 		if (retry < 0) 
 			NSLog(@"ERROR: stream_seek timeout detected.");
 		

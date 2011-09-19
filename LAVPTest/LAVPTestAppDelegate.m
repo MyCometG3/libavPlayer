@@ -241,10 +241,10 @@
 - (IBAction) updatePosition:(id)sender
 {
 	NSScroller *pos = (NSScroller*) sender;
-	if ([pos window] == layerwindow) {
+	if ([pos window] == layerwindow && !layerstream.busy) {
 		[layerstream setPosition:[sender doubleValue]];
 	}
-	if ([pos window] == viewwindow) {
+	if ([pos window] == viewwindow && !viewstream.busy) {
 		[viewstream setPosition:[sender doubleValue]];
 	}
 }

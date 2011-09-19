@@ -27,6 +27,7 @@
 #import <QTKit/QTTime.h>
 
 extern NSString * const LAVPStreamDidEndNotification;
+extern NSString * const LAVPStreamDidSeekNotification;
 
 @class LAVPDecoder;
 
@@ -39,6 +40,7 @@ extern NSString * const LAVPStreamDidEndNotification;
 	NSTimer *timer;			// notification timer when EndOfMovie reached
 	BOOL _muted;
 	Float32 currentVol;
+	BOOL _busy;
 }
 
 @property (retain, readonly) NSURL *url;
@@ -50,6 +52,7 @@ extern NSString * const LAVPStreamDidEndNotification;
 @property (assign) double_t rate;
 @property (assign) Float32 volume;
 @property (assign) BOOL muted;
+@property (assign) BOOL busy;
 
 - (id) initWithURL:(NSURL *)url error:(NSError **)errorPtr;
 + (id) streamWithURL:(NSURL *)url error:(NSError **)errorPtr;

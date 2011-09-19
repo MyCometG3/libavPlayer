@@ -1329,7 +1329,7 @@
 				<int key="NSWindowStyleMask">271</int>
 				<int key="NSWindowBacking">2</int>
 				<string key="NSWindowRect">{{341, 828}, {340, 200}}</string>
-				<int key="NSWTFlags">609746944</int>
+				<int key="NSWTFlags">607649792</int>
 				<string key="NSWindowTitle">View Window</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
@@ -1345,7 +1345,6 @@
 							<string key="NSFrame">{{250, 0}, {70, 19}}</string>
 							<reference key="NSSuperview" ref="195345970"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<bool key="NSViewIsLayerTreeHost">YES</bool>
 							<int key="NSViewLayerContentsRedrawPolicy">2</int>
 							<bool key="NSEnabled">YES</bool>
@@ -1440,8 +1439,8 @@
 			<object class="NSWindowTemplate" id="361730372">
 				<int key="NSWindowStyleMask">271</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{0, 848}, {340, 200}}</string>
-				<int key="NSWTFlags">611844096</int>
+				<string key="NSWindowRect">{{0, 828}, {340, 200}}</string>
+				<int key="NSWTFlags">607649792</int>
 				<string key="NSWindowTitle">Layer Window</string>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
@@ -1457,7 +1456,6 @@
 							<string key="NSFrame">{{250, 0}, {70, 19}}</string>
 							<reference key="NSSuperview" ref="251366697"/>
 							<reference key="NSWindow"/>
-							<reference key="NSNextKeyView"/>
 							<bool key="NSViewIsLayerTreeHost">YES</bool>
 							<int key="NSViewLayerContentsRedrawPolicy">2</int>
 							<bool key="NSEnabled">YES</bool>
@@ -3763,6 +3761,8 @@
 					<string>516.IBPluginDependency</string>
 					<string>517.IBPluginDependency</string>
 					<string>538.IBEditorWindowLastContentRect</string>
+					<string>538.IBNSWindowAutoPositionCentersHorizontal</string>
+					<string>538.IBNSWindowAutoPositionCentersVertical</string>
 					<string>538.IBPluginDependency</string>
 					<string>538.IBWindowTemplateEditedContentRect</string>
 					<string>538.NSWindowTemplate.visibleAtLaunch</string>
@@ -4035,6 +4035,8 @@
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>{{349, 691}, {320, 180}}</string>
+					<boolean value="NO"/>
+					<boolean value="NO"/>
 					<string>com.apple.InterfaceBuilder.CocoaPlugin</string>
 					<string>{{349, 691}, {320, 180}}</string>
 					<boolean value="YES"/>

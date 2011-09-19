@@ -27,11 +27,13 @@
 #import "LAVPDecoder.h"
 
 NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
+NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification";
 
 #define AV_TIME_BASE            1000000
 
 @implementation LAVPStream
 @synthesize url;
+@synthesize busy = _busy;
 
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr
 {
@@ -39,6 +41,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	if (self) {
 		url = [sourceURL copy];
 		_htOffset = CVGetCurrentHostTime();
+		currentVol = 1.0;
 		
 		//
 		decoder = [[LAVPDecoder alloc] initWithURL:url error:errorPtr];
@@ -187,10 +190,29 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 	newPosition = (newPosition<0.0 ? 0.0 : newPosition);
 	newPosition = (newPosition>1.0 ? 1.0 : newPosition);
 	
+	self.busy = YES;
+	
 	// 
+	BOOL muted = [self muted];
+	if (!muted) [self setMuted:YES];
+	double_t prevRate = [self rate];
+	[self setRate:0.0];
+	
 	[decoder setPosition:newPosition*duration];
 	
+	[self setRate:prevRate];
+	if (!muted) [self setMuted:NO];
+	
 	//NSLog(@"seek finished");
+	
+	self.busy = NO;
+	
+	// Post notification
+	//NSLog(@"LAVPStreamDidEndNotification");
+	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+	NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidSeekNotification
+																 object:self];
+	[center postNotification:notification];
 }
 
 - (double_t) rate
@@ -241,6 +263,7 @@ NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 
 - (void)movieFinished
 {
+	//NSLog(@"movieFinished");
 	// stop notificatino timer
 	if (timer) {
 		[timer invalidate];

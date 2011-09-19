@@ -185,6 +185,8 @@
 		
 		//
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSApplicationWillTerminateNotification object:nil];
+		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
 	}
 	
 	return self;
@@ -221,7 +223,7 @@
 				forLayerTime:(CFTimeInterval)timeInterval 
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
-	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize)) {
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
 		if (!timeStamp) 
 			return [_stream readyForCurrent];
 		else
@@ -711,6 +713,14 @@ bail:
 	
 	// Replace current CIImage with new one
 	image = [[CIImage imageWithCVImageBuffer:pixelbuffer] retain];
+}
+
+- (void) streamDidSeek:(NSNotification *)aNotification
+{
+	id sender = [aNotification object];
+	if (sender == _stream) {
+		lastPTS = -1;
+	}
 }
 
 /* =============================================================================================== */
