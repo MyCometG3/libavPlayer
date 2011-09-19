@@ -47,8 +47,12 @@ void copy_planar_YUV420_to_2vuy(size_t width, size_t height,
 								uint8_t *baseAddr_v, size_t rowBytes_v, 
 								uint8_t *baseAddr_2vuy, size_t rowBytes_2vuy)
 {
-	
+#if 1
+	width = (width & 0x1) ? width-- : width;
+	height = (height & 0x1) ? height-- : height;
+#else
 	assert( !(width & 0x1 || height & 0x1) );	/* At least both x and y should be even value */
+#endif
 	
 #if USESIMD		/* memalign hack */
 	uint8_t* temp_yt_aligned = malloc(roundUpToMultipleOf16(rowBytes_y));
