@@ -592,7 +592,7 @@ int hasImage(void *opaque, double_t targetpts)
 			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
-		NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
+		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
 	}
 	
 bail:
@@ -686,7 +686,7 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
-		NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
+		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
 	}
 	
 bail:
@@ -712,7 +712,7 @@ int hasImageCurrent(void *opaque)
 			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
-		NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
+		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
 	}
 	
 bail:
@@ -782,7 +782,7 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
-		NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
+		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
 	}
 	
 bail:
