@@ -13,12 +13,14 @@
 	IBOutlet LAVPView *view;
 	LAVPStream *viewstream;
 	double_t viewPos;
+	NSString *viewTitle;
 	
 	IBOutlet NSWindow *layerwindow;
 	IBOutlet NSView *layerView;
 	LAVPLayer *layer;
 	LAVPStream *layerstream;
 	double_t layerPos;
+	NSString *layerTitle;
 	
 	NSTimer *timer;
 }
@@ -28,8 +30,7 @@
 
 - (void) loadMovieAtURL:(NSURL *)url;
 
-- (IBAction) togglePlayView:(id)sender;
-- (IBAction) togglePlayLayer:(id)sender;
+- (IBAction) togglePlay:(id)sender;
 - (IBAction) rewindStream:(id)sender;
 - (IBAction) updatePosition:(id)sender;
 

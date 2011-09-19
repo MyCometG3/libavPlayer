@@ -8,6 +8,17 @@
 
 #import "LAVPTestAppDelegate.h"
 
+NSString* formatTime(QTTime qttime)
+{
+	SInt32 i = qttime.timeValue / qttime.timeScale;
+	SInt32 d = i / (24*60*60);
+	SInt32 h = (i - d * (24*60*60)) / (60*60);
+	SInt32 m = (i - d * (24*60*60) - h * (60*60)) / 60;
+	SInt32 s = (i - d * (24*60*60) - h * (60*60) - m * 60);
+	SInt32 f = (qttime.timeValue % qttime.timeScale) * 1000 / qttime.timeScale;	// Just micro second
+	return [NSString stringWithFormat:@"%02d:%02d:%02d:%03d", h, m, s, f];
+}
+
 @implementation LAVPTestAppDelegate
 
 @synthesize viewwindow;
@@ -29,10 +40,18 @@
 - (void)updatePos:(NSTimer*)theTimer
 {
 	if (layerwindow) {
-		[self setValue:[NSNumber numberWithDouble:layerstream.position ] forKey:@"layerPos"];
+		double_t pos = layerstream.position;
+		[self setValue:[NSNumber numberWithDouble:pos] forKey:@"layerPos"];
+		NSString *timeStr = formatTime([layerstream currentTime]);
+		[self setValue:[NSString stringWithFormat:@"Layer Window : %@ (%.3f)", timeStr, pos] 
+				forKey:@"layerTitle"];
 	}
 	if (viewwindow) {
-		[self setValue:[NSNumber numberWithDouble:viewstream.position ] forKey:@"viewPos"];
+		double_t pos = viewstream.position;
+		[self setValue:[NSNumber numberWithDouble:pos] forKey:@"viewPos"];
+		NSString *timeStr = formatTime([viewstream currentTime]);
+		[self setValue:[NSString stringWithFormat:@"View Window : %@ (%.3f)", timeStr, pos] 
+				forKey:@"viewTitle"];
 	}
 }
 
@@ -159,48 +178,35 @@
 	}
 }
 
-- (IBAction) togglePlayView:(id)sender
+- (IBAction) togglePlay:(id)sender
 {
-	if ([viewstream rate]) {
-		[viewstream stop];
+	LAVPStream *theStream = nil;
+	
+	NSButton *button = (NSButton*) sender;
+	if ([button window] == layerwindow) {
+		theStream = layerstream;
+	}
+	if ([button window] == viewwindow) {
+		theStream = viewstream;
+	}
+	
+	if ([theStream rate]) {
+		[theStream stop];
 	} else {
-		QTTime currentTime = [viewstream currentTime];
-		QTTime duration = [viewstream duration];
+		QTTime currentTime = [theStream currentTime];
+		QTTime duration = [theStream duration];
 		if (currentTime.timeValue + 1e6/30 >= duration.timeValue) {
-			[viewstream gotoBeggining];
+			[theStream gotoBeggining];
 		}
 		
 		// test code for playRate support
 		BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
 		if (shiftKey) {
-			[viewstream setRate:1.5];
+			[theStream setRate:1.5];
 		} else {
-			[viewstream setRate:1.0];
+			[theStream setRate:1.0];
 		}
 	}
-//	[view setNeedsDisplay:YES];
-}
-
-- (IBAction) togglePlayLayer:(id)sender
-{
-	if ([layerstream rate]) {
-		[layerstream stop];
-	} else {
-		QTTime currentTime = [layerstream currentTime];
-		QTTime duration = [layerstream duration];
-		if (currentTime.timeValue + 1e6/30 >= duration.timeValue) {
-			[layerstream gotoBeggining];
-		}
-		
-		// test code for playRate support
-		BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
-		if (shiftKey) {
-			[layerstream setRate:1.5];
-		} else {
-			[layerstream setRate:1.0];
-		}
-	}
-//	[layer setNeedsDisplay];
 }
 
 - (IBAction) openDocument:(id)sender
@@ -240,7 +246,7 @@
 
 - (IBAction) updatePosition:(id)sender
 {
-	NSScroller *pos = (NSScroller*) sender;
+	NSSlider *pos = (NSSlider*) sender;
 	if ([pos window] == layerwindow && !layerstream.busy) {
 		[layerstream setPosition:[sender doubleValue]];
 	}

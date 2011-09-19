@@ -268,7 +268,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			return kCVReturnError;
 		}
 		
-		// Check layer resize
+		// Check view resize
 		BOOL resized = NO;
 		if (!NSEqualRects(prevRect, [self bounds])) {
 			prevRect = [self bounds];
@@ -730,7 +730,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		//NSLog(@"texture rect = %@", NSStringFromRect(textureRect));
 	}
 	
-	// Try to update NSOpenGLLayer
+	// Try to update NSOpenGLView
 	lastPTS = -1;
 	[self setNeedsDisplay:YES];
 	
