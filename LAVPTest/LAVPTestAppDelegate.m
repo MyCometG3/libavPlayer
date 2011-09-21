@@ -246,12 +246,22 @@ NSString* formatTime(QTTime qttime)
 
 - (IBAction) updatePosition:(id)sender
 {
+	static double_t layerPrev = -1;
+	static double_t viewPrev = -1;
 	NSSlider *pos = (NSSlider*) sender;
+	double_t newPos = [pos doubleValue];
+	
 	if ([pos window] == layerwindow && !layerstream.busy) {
-		[layerstream setPosition:[sender doubleValue]];
+		if (newPos != layerPrev) {
+			[layerstream setPosition:newPos];
+			layerPrev = newPos;
+		}
 	}
 	if ([pos window] == viewwindow && !viewstream.busy) {
-		[viewstream setPosition:[sender doubleValue]];
+		if (newPos != viewPrev) {
+			[viewstream setPosition:newPos];
+			viewPrev = newPos;
+		}
 	}
 }
 

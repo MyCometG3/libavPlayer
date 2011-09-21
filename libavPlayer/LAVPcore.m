@@ -477,10 +477,12 @@ void stream_pause(VideoState *is)
 	is->paused = !is->paused;
 	is->step = 0;
 	
-	if (is->paused) 
-		LAVPAudioQueuePause(is);
-	else
-		LAVPAudioQueueStart(is);
+	if (is->audio_stream >= 0) {
+		if (is->paused) 
+			LAVPAudioQueuePause(is);
+		else
+			LAVPAudioQueueStart(is);
+	}
 	
 	//NSLog(@"stream_pause = %s at %3.3f", (is->paused ? "paused" : "play"), get_master_clock(is));
 }
@@ -598,7 +600,7 @@ double_t stream_playRate(VideoState *is)
 
 void stream_setPlayRate(VideoState *is, double_t newRate)
 {
-	assert(newRate > 0.0 && newRate <= 4.0);
+	assert(newRate > 0.0);
 	
 	is->playRate = newRate;
 }

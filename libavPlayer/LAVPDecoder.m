@@ -279,8 +279,8 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 
 - (void) setRate:(CGFloat)rate
 {
-	/* note: only accept 0.0 to 4.0 */
-	if (!is || rate < 0.0 || rate > 4.0) {
+	/* note: only accept 0.0 and positive */
+	if (!is || rate < 0.0) {
 		return;
 	}
 	
@@ -332,24 +332,29 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		stream_seek(is, ts, 0, 0);
 		
 		// seek wait - blocking
-		int retry = 150;	// 1.5sec max
 		double_t rate = [self rate];
-		double_t drift = (rate == 0.0) ? 1.0/15 : 1.0/5;
-		
-		[self setRate:4.0];
-		while (retry--) {
-			usleep(10*1000);
-			double_t master = get_master_clock(is);
-			double_t request = ts/1.0e6;
-			double_t diff = fabs(master - request);
+		if (!rate) [self setRate:8.0];
+		{
+			// wait till time error is less than allowed drift
+			double_t diff = get_master_clock(is) - ts/1.0e6;
+			double_t prev = is->ic->duration;
+			double_t drift = (rate == 0.0) ? 1.0/25 : 1.0/2;
+			int count = 0, limit = (rate == 0.0) ? 300 : 100;
 			
-			if (!is->seek_req && diff < drift) 
-				break;
+			//NSLog(@"diff = %.3f", diff);
+			for	(;limit>count;count++) {
+				diff = get_master_clock(is) - ts/1.0e6;
+				if (fabs(diff) < 1.0) {
+					if ( (diff < 0 && -diff < drift) || (diff >= 0 && diff > prev) ) 
+						break;
+				}
+				prev = diff;
+				
+				usleep(10*1000);
+			}
+			//NSLog(@"diff = %.3f %d %@", diff, count, ((limit > count) ? @"" : @"timeout"));
 		}
-		[self setRate:rate];
-		
-		if (retry < 0) 
-			NSLog(@"ERROR: stream_seek timeout detected.");
+		[self setRate:0.0];
 		
 		return ts;
 	}
@@ -359,7 +364,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 - (Float32) volume
 {
 	Float32 volume = 0.0;
-	if (is) {
+	if (is && is->audio_stream >= 0) {
 		volume = getVolume(is);
 	}
 	return volume;
@@ -368,7 +373,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 - (void) setVolume:(Float32)volume
 {
 	AudioQueueParameterValue newVolume = volume;
-	if (is) {
+	if (is && is->audio_stream >= 0) {
 		setVolume(is, newVolume);
 	}
 }

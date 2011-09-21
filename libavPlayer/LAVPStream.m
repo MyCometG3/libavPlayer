@@ -196,11 +196,10 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	BOOL muted = [self muted];
 	if (!muted) [self setMuted:YES];
 	double_t prevRate = [self rate];
-	[self setRate:0.0];
 	
 	[decoder setPosition:newPosition*duration];
 	
-	[self setRate:prevRate];
+	if (prevRate) [self setRate:prevRate];
 	if (!muted) [self setMuted:NO];
 	
 	//NSLog(@"seek finished");

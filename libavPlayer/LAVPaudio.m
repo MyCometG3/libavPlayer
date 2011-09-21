@@ -337,7 +337,7 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 		//
 		OSStatus err = 0;
 		AudioQueueRef outAQ = NULL;
-		is->audioDispatchQueue = dispatch_queue_create(NULL, NULL);
+		is->audioDispatchQueue = dispatch_queue_create("audio", NULL);
 #if 1
 		void (^inCallbackBlock)(AudioQueueRef, AudioQueueBufferRef) = ^(AudioQueueRef inAQ, AudioQueueBufferRef inBuffer) 
 		{
@@ -493,7 +493,7 @@ void audio_updatePitch(VideoState *is)
 {
 	OSStatus err = 0;
 	
-	assert(is->playRate > 0.0 && is->playRate <= 4.0);
+	assert(is->playRate > 0.0);
 	
 	if (is->playRate == 1.0) {
 		// Set playrate BEFORE disable it
