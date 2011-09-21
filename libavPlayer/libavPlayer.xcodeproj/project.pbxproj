@@ -365,7 +365,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "say \"Building intel binary.\" &\necho;pwd;echo\n\nTHESDK=\"$DEVELOPER_SDK_DIR/MacOSX10.6.sdk\"\nTHEARC=\"x86_64\"; THECPU=\"core2\"\nTHEOPT=\"-ffast-math -falign-loops=16 -fstrict-aliasing -m64 -mtune=core2 \" \n\n# Use yasm from MacPort\nPATH=$PATH:/opt/local/bin/\n\ncd libav\n./configure --enable-cross-compile --arch=$THEARC --cpu=$THECPU --cc=clang --enable-small --target-os=darwin \\\n --enable-decoders --disable-encoders --enable-demuxers --disable-muxers --enable-parsers --disable-avdevice \\\n --disable-postproc --disable-avfilter --disable-filters --enable-protocols --enable-network \\\n --enable-pthreads --enable-gpl --disable-avconv --disable-ffmpeg --disable-avprobe --disable-avserver --disable-avplay \\\n --extra-ldflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wl,-syslibroot,$THESDK \" \\\n --extra-cflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wno-deprecated-declarations $THEOPT \" \\\n --enable-protocol=file \\\n|| { echo -- ERROR on confiure --; tail config.err; exit 1; }\n\necho -- Run make clean --\nmake clean || { echo -- ERROR on make clean --; exit 1; }\n\necho -- Run make lib --\nmake -j4 || { exit 1; }\n\ncp -p lib*/*.a ./\n#strip -x *.a\n\necho;echo \"Done\";echo\nexit 0";
+			shellScript = "say \"Building intel binary.\" &\necho;pwd;echo\n\nTHESDK=\"$DEVELOPER_SDK_DIR/MacOSX10.6.sdk\"\nTHEARC=\"x86_64\"; THECPU=\"core2\"\nTHEOPT=\"-ffast-math -falign-loops=16 -fstrict-aliasing -m64 -mtune=core2 \" \n\n# Use yasm from MacPort\nPATH=$PATH:/opt/local/bin/\n\ncd libav\n./configure --enable-cross-compile --arch=$THEARC --cpu=$THECPU --cc=gcc-4.2 --enable-small --target-os=darwin \\\n --enable-decoders --disable-encoders --enable-demuxers --disable-muxers --enable-parsers --disable-avdevice \\\n --disable-postproc --disable-avfilter --disable-filters --enable-protocols --enable-network \\\n --enable-pthreads --enable-gpl --disable-avconv --disable-ffmpeg --disable-ffprobe --disable-ffserver --disable-ffplay \\\n --extra-ldflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wl,-syslibroot,$THESDK \" \\\n --extra-cflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wno-deprecated-declarations $THEOPT \" \\\n --enable-protocol=file \\\n|| { echo -- ERROR on confiure --; tail config.err; exit 1; }\n\necho -- Run make clean --\nmake clean || { echo -- ERROR on make clean --; exit 1; }\n\necho -- Run make lib --\nmake -j4 || { exit 1; }\n\ncp -p lib*/*.a ./\n#strip -x *.a\n\necho;echo \"Done\";echo\nexit 0";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -475,6 +475,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = libavPlayer_Prefix.pch;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = /Library/Frameworks;
 				LIBRARY_SEARCH_PATHS = (
@@ -503,6 +504,7 @@
 				GCC_ENABLE_OBJC_GC = supported;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = libavPlayer_Prefix.pch;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = /Library/Frameworks;
 				LIBRARY_SEARCH_PATHS = (
