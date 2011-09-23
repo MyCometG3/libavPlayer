@@ -157,7 +157,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 {
 	QTTime timeInUsec = QTMakeTimeScaled(newTime, AV_TIME_BASE);
 	
-	[decoder setPosition:timeInUsec.timeValue];
+	[decoder setPosition:timeInUsec.timeValue blocking:YES];
 }
 
 - (double_t) position
@@ -197,7 +197,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	if (!muted) [self setMuted:YES];
 	double_t prevRate = [self rate];
 	
-	[decoder setPosition:newPosition*duration];
+	[decoder setPosition:newPosition*duration blocking:(prevRate == 0 ? YES : NO)];
 	
 	if (prevRate) [self setRate:prevRate];
 	if (!muted) [self setMuted:NO];
@@ -222,7 +222,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (void) setRate:(double_t) newRate
 {
-	//NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
+	NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
 	
 	// stop notificatino timer
 	if (timer) {
@@ -262,7 +262,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (void)movieFinished
 {
-	//NSLog(@"movieFinished");
+	NSLog(@"movieFinished");
 	// stop notificatino timer
 	if (timer) {
 		[timer invalidate];

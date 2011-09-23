@@ -318,7 +318,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	return 0;
 }
 
-- (int64_t) setPosition:(int64_t)pos
+- (int64_t) setPosition:(int64_t)pos blocking:(BOOL)blocking;
 {
 	// position is in AV_TIME_BASE value.
 	// avutil.h defines timebase for AVFormatContext - in usec.
@@ -331,30 +331,40 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		
 		stream_seek(is, ts, 0, 0);
 		
-		// seek wait - blocking
-		double_t rate = [self rate];
-		if (!rate) [self setRate:8.0];
 		{
-			// wait till time error is less than allowed drift
-			double_t diff = get_master_clock(is) - ts/1.0e6;
-			double_t prev = is->ic->duration;
-			double_t drift = (rate == 0.0) ? 1.0/25 : 1.0/2;
-			int count = 0, limit = (rate == 0.0) ? 300 : 100;
-			
-			//NSLog(@"diff = %.3f", diff);
-			for	(;limit>count;count++) {
-				diff = get_master_clock(is) - ts/1.0e6;
-				if (fabs(diff) < 1.0) {
-					if ( (diff < 0 && -diff < drift) || (diff >= 0 && diff > prev) ) 
-						break;
-				}
-				prev = diff;
-				
+			// Wait till avformat_seek_file() is completed
+			int count = 0, limit = 100;
+			for (; limit > count; count++) {
 				usleep(10*1000);
+				if (!is->seek_req) break;
 			}
-			//NSLog(@"diff = %.3f %d %@", diff, count, ((limit > count) ? @"" : @"timeout"));
 		}
-		[self setRate:0.0];
+		if (blocking) {
+			// seek wait - blocking
+			double_t rate = [self rate];
+			if (!rate) [self setRate:8.0];
+			{
+				// wait till time error is less than allowed drift
+				double_t diff = get_master_clock(is) - ts/1.0e6;
+				double_t prev = is->ic->duration;
+				double_t drift = (rate == 0.0) ? 1.0/25 : 1.0/2;
+				int count = 0, limit = (rate == 0.0) ? 300 : 100;
+				
+				//NSLog(@"diff = %.3f", diff);
+				for	(;limit>count;count++) {
+					diff = get_master_clock(is) - ts/1.0e6;
+					if (fabs(diff) < 1.0) {
+						if ( (diff < 0 && -diff < drift) || (diff >= 0 && diff > prev) ) 
+							break;
+					}
+					prev = diff;
+					
+					usleep(10*1000);
+				}
+				//NSLog(@"diff = %.3f %d %@", diff, count, ((limit > count) ? @"" : @"timeout"));
+			}
+			[self setRate:0.0];
+		}
 		
 		return ts;
 	}
