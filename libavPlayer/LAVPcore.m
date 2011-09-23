@@ -266,7 +266,7 @@ int decode_thread(void *arg)
 	//NSLog(@"abort_request is %d", is->abort_request);
 	
 	// decode loop
-	int eof=0;
+	is->eof=0;
 	AVPacket pkt1;
 	AVPacket *pkt = &pkt1;
 	for(;;) {
@@ -323,7 +323,7 @@ int decode_thread(void *arg)
 				}
 			}
 			is->seek_req = 0;
-			eof= 0;
+			is->eof= 0;
 		}
 		
 		// Check queue size
@@ -339,7 +339,7 @@ int decode_thread(void *arg)
 		}
 		
 		// EOF reached
-		if(eof) {
+		if(is->eof) {
 			if(is->video_stream >= 0){
 				av_init_packet(pkt);
 				pkt->data=NULL;
@@ -374,7 +374,7 @@ int decode_thread(void *arg)
 		ret = av_read_frame(is->ic, pkt);
 		if (ret < 0) {
 			if (ret == AVERROR_EOF || (is->ic->pb && is->ic->pb->eof_reached))
-				eof=1;
+				is->eof=1;
 			if (is->ic->pb && is->ic->pb->error) {
 				[pool drain];
 				break;

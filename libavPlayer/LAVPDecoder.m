@@ -388,4 +388,9 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	}
 }
 
+- (BOOL) eof
+{
+	return (is->eof ? YES : NO);
+}
+
 @end

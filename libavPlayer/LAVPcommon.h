@@ -112,6 +112,7 @@ typedef struct VideoState {
 	int abort_request;
 	int show_status;
 	
+	int eof;
 	int loop;
 	int av_sync_type;
 	double external_clock; /* external clock base */
