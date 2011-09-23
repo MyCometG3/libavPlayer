@@ -222,7 +222,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (void) setRate:(double_t) newRate
 {
-	NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
+	//NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
 	
 	// stop notificatino timer
 	if (timer) {
@@ -239,55 +239,35 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 		// current host time
 		_htOffset = CVGetCurrentHostTime();
 		
-		// update position
-		int64_t position = [decoder position];
-		int64_t	duration = [decoder duration];
-		_posOffset = (double_t)position/duration;
-		
-		// setup notification timer
-		double_t remain = 0.0;
-		if (newRate > 0.0) {
-			remain = (double_t)(duration - position) / AV_TIME_BASE;
-		} else if (newRate < 0.0) {
-			remain = (double_t)position / AV_TIME_BASE;
-		}
-		//NSLog(@"remain = %.3f sec", remain);
-		timer = [NSTimer scheduledTimerWithTimeInterval:remain/newRate
+		// setup EndOfMovie Checker
+		timer = [NSTimer scheduledTimerWithTimeInterval:0.1
 												 target:self 
-											   selector:@selector(movieFinished) 
+											   selector:@selector(checkEndOfMovie) 
 											   userInfo:nil 
-												repeats:NO];
+												repeats:YES];
 	}
 }
 
-- (void)movieFinished
+- (void)checkEndOfMovie
 {
-	NSLog(@"movieFinished");
-	// stop notificatino timer
-	if (timer) {
-		[timer invalidate];
-		timer = nil;
+	if ([decoder eof] && [decoder rate] == 0.0) {
+		//NSLog(@"movieFinished");
+		
+		// stop notificatino timer
+		if (timer) {
+			[timer invalidate];
+			timer = nil;
+		}
+		
+		// Post notification
+		//NSLog(@"LAVPStreamDidEndNotification");
+		NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+		NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidEndNotification
+																	 object:self];
+		[center postNotification:notification];
 	}
 	
-	// Ensure stream to pause
-	int retry = 100;	// 1.0 sec max
-	while (retry--) {
-		if ([decoder rate] == 0.0) break;
-		usleep(10*1000);
-	}
-	if (retry < 0) {
-		dispatch_async(dispatch_get_current_queue(), ^(void){
-			[self movieFinished];
-		});
-		return;
-	}
-	
-	// Post notification
-	//NSLog(@"LAVPStreamDidEndNotification");
-	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-	NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidEndNotification
-																 object:self];
-	[center postNotification:notification];
+	return;
 }
 
 - (void) play
@@ -336,6 +316,11 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 		_muted = FALSE;
 		[decoder setVolume:currentVol];
 	}
+}
+
+- (BOOL) eof
+{
+	return [decoder eof];
 }
 
 @end
