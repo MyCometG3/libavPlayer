@@ -1,7 +1,7 @@
 libavPlayer.framework is MacOS X framework for media playback using libav*.
 - NSOpenGLView subclass
 - CAOpenGLLayer subclass
-Derived from avplay.c in libav project.
+Derived from ffplay.c in ffmpeg project.
 
 This is Free software under GPL V2. 
 (Not LGPL V2.1 because it contains my GPL based 422-420 converter code.)
@@ -12,10 +12,11 @@ How to build:
 * Setup git and yasm 1.1.x environment. The macports is easy solution.
 * NOTICE: This build requires SnowLeopard+Xcode 4.0, Lion+Xcode4.1 or later.
 
-* Get latest libav from libav project.
-  $ git clone git://github.com/libav/libav.git
+* Get latest ffmpeg from ffmpeg project.
+  $ git clone git://git.videolan.org/ffmpeg.git
+* Rename ffmpeg folder as libav.
 * Place libav folder in same folder with libavPlayer.xcworkspace/libavPlayer/LAVPTest.
 * Build "build_libav" target with Xcode.
 * Build "all" target with Xcode.
 
-NOTE: Building "all" target will copy stripped libavPlayer.framework into ~/Library/Framework/. Not /Library/Framework/.
+NOTE: Building "all" target will copy stripped libavPlayer.framework into /Library/Framework/.
