@@ -347,11 +347,19 @@ int decode_thread(void *arg)
 				pkt->stream_index= is->video_stream;
 				packet_queue_put(&is->videoq, pkt);
 			}
+			if (is->audio_stream >= 0 &&
+				is->audio_st->codec->codec->capabilities & CODEC_CAP_DELAY) {
+				av_init_packet(pkt);
+				pkt->data = NULL;
+				pkt->size = 0;
+				pkt->stream_index = is->audio_stream;
+				packet_queue_put(&is->audioq, pkt);
+			}
 			usleep(10*1000);
 			if(is->audioq.size + is->videoq.size + is->subtitleq.size ==0){
 				if (is->loop > 1) {
 					is->loop--;
-					stream_seek(is, 0, 0, 0);
+					stream_seek(is, is->ic->start_time != AV_NOPTS_VALUE ? is->ic->start_time : 0, 0, 0);
 				}
 				if (!is->paused) {
 					//NSLog(@"End of media detected at %.3f", is->ic->duration/1.0e6);

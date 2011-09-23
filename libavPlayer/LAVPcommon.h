@@ -56,7 +56,7 @@ enum {
 
 #define AV_NOSYNC_THRESHOLD 10.0
 
-#define VIDEO_PICTURE_QUEUE_SIZE 2
+#define VIDEO_PICTURE_QUEUE_SIZE 3
 
 #define SUBPICTURE_QUEUE_SIZE 4
 
@@ -83,6 +83,7 @@ typedef struct PtsCorrectionContext {
 typedef struct VideoPicture {
 	double pts;                                  ///<presentation time stamp for this picture
 	double target_clock;                         ///<av_gettime() time at which this should be displayed ideally
+	double duration;                             ///<expected duration of the frame
 	int64_t pos;                                 ///<byte position in file
 	AVFrame *bmp;
 	int width, height; /* source height & width */
@@ -185,6 +186,7 @@ typedef struct VideoState {
 	
 	unsigned int audio_buf_size; /* in bytes */
 	int audio_buf_index; /* in bytes */
+	int audio_write_buf_size;
 	double audio_diff_avg_coef;
 	double audio_diff_threshold;
 	int audio_diff_avg_count;
@@ -197,6 +199,9 @@ typedef struct VideoState {
 	DECLARE_ALIGNED(16,uint8_t,audio_buf1)[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
 	DECLARE_ALIGNED(16,uint8_t,audio_buf2)[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
 	uint8_t *audio_buf;
+	
+	double audio_current_pts;
+	double audio_current_pts_drift;
 	
 	double audio_clock;
 	AudioQueueRef outAQ;

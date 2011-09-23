@@ -159,12 +159,12 @@ void video_refresh_timer(void *opaque)
 				assert(nextvp->target_clock >= vp->target_clock);
 				next_target= nextvp->target_clock;
 			}else{
-				next_target= vp->target_clock + is->video_clock - vp->pts; //FIXME pass durations cleanly
+				next_target= vp->target_clock + vp->duration;
 			}
 			int framedrop = 1;
-			if(framedrop && time > next_target){
+			if((framedrop>0 || (framedrop && is->audio_st)) && time > next_target){
 				is->skip_frames *= 1.0 + FRAME_SKIP_FACTOR;
-				if(is->pictq_size > 1 || time > next_target + 0.5){
+				if(is->pictq_size > 1){
 					/* update queue size and signal for next picture */
 					if (++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE)
 						is->pictq_rindex = 0;
@@ -291,12 +291,28 @@ void alloc_picture(void *opaque)
  *
  * @param pts the dts of the pkt / pts of the frame and guessed if not known
  */
-int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos)
+int queue_picture(VideoState *is, AVFrame *src_frame, double pts1, int64_t pos)
 {
 	VideoPicture *vp;
+	double frame_delay, pts = pts1;
 	
 	/* wait until we have space to put a new picture */
 	LAVPLockMutex(is->pictq_mutex);
+	
+	/* compute the exact PTS for the picture if it is omitted in the stream
+	 * pts1 is the dts of the pkt / pts of the frame */
+	if (pts != 0) {
+		/* update video clock with pts, if present */
+		is->video_clock = pts;
+	} else {
+		pts = is->video_clock;
+	}
+	/* update video clock for next frame */
+	frame_delay = av_q2d(is->video_st->codec->time_base);
+	/* for MPEG2, the frame can be repeated, so we update the
+	 clock accordingly */
+	frame_delay += src_frame->repeat_pict * (frame_delay * 0.5);
+	is->video_clock += frame_delay;
 	
 	if(is->pictq_size>=VIDEO_PICTURE_QUEUE_SIZE && !is->refresh)
 		is->skip_frames= FFMAX(1.0 - FRAME_SKIP_FACTOR, is->skip_frames * (1.0-FRAME_SKIP_FACTOR));
@@ -311,6 +327,8 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, int64_t pos)
 		return -1;
 	
 	vp = &is->pictq[is->pictq_windex];
+	
+	vp->duration = frame_delay;
 	
 	/* alloc or resize hardware picture buffer */
 	if (!vp->bmp ||

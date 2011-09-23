@@ -60,6 +60,13 @@ int audio_write_get_buf_size(VideoState *is)
 /* get the current audio clock value */
 double get_audio_clock(VideoState *is)
 {
+#if 1
+	if (is->paused) {
+		return is->audio_current_pts;
+	} else {
+		return is->audio_current_pts_drift + av_gettime() / 1000000.0;
+	}
+#else
 	double pts;
 	int hw_buf_size, bytes_per_sec;
 	pts = is->audio_clock;
@@ -73,6 +80,7 @@ double get_audio_clock(VideoState *is)
 	if (bytes_per_sec)
 		pts -= (double)hw_buf_size / bytes_per_sec;
 	return pts;
+#endif
 }
 
 /* return the new audio buffer size (samples can be added or deleted
@@ -269,6 +277,7 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
 	//
 	VideoState *is = inUserData;
 	int audio_size, len1;
+	int bytes_per_sec;
 	double pts;
 	
 	is->audio_callback_time = av_gettime();
@@ -296,6 +305,14 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
 		stream += len1;
 		is->audio_buf_index += len1;
 	}
+	is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
+	if (is->audio_st) {
+		bytes_per_sec = is->audio_st->codec->sample_rate * 2 * is->audio_st->codec->channels;
+		is->audio_current_pts = is->audio_clock - (double)(2 * inBuffer->mAudioDataBytesCapacity + is->audio_write_buf_size) / bytes_per_sec;
+	} else {
+		is->audio_current_pts = is->audio_clock;
+	}
+	is->audio_current_pts_drift = is->audio_current_pts - is->audio_callback_time / 1000000.0;
 	
 	//
 	inBuffer->mAudioDataByteSize = stream - (UInt8 *)inBuffer->mAudioData;
