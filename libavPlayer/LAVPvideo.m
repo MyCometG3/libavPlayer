@@ -369,21 +369,31 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts1, int64_t pos)
 		pict.linesize[1] = vp->bmp->linesize[1];
 		pict.linesize[2] = vp->bmp->linesize[2];
 		
+		if (src_frame->format == PIX_FMT_YUV420P) {
 #if ALLOW_GPL_CODE
-		CVF_CopyPlane((const UInt8 *)src_frame->data[0], src_frame->linesize[0], vp->height, pict.data[0], pict.linesize[0], vp->height);
-		CVF_CopyPlane((const UInt8 *)src_frame->data[1], src_frame->linesize[1], vp->height, pict.data[1], pict.linesize[1], vp->height/2);
-		CVF_CopyPlane((const UInt8 *)src_frame->data[2], src_frame->linesize[2], vp->height, pict.data[2], pict.linesize[2], vp->height/2);
+			CVF_CopyPlane((const UInt8 *)src_frame->data[0], src_frame->linesize[0], vp->height, pict.data[0], pict.linesize[0], vp->height);
+			CVF_CopyPlane((const UInt8 *)src_frame->data[1], src_frame->linesize[1], vp->height, pict.data[1], pict.linesize[1], vp->height/2);
+			CVF_CopyPlane((const UInt8 *)src_frame->data[2], src_frame->linesize[2], vp->height, pict.data[2], pict.linesize[2], vp->height/2);
 #else
-		av_image_copy_plane(pict.data[0], pict.linesize[0], 
-							(const uint8_t *)src_frame->data[0], src_frame->linesize[0], 
-							src_frame->linesize[0], vp->height);
-		av_image_copy_plane(pict.data[1], pict.linesize[1], 
-							(const uint8_t *)src_frame->data[1], src_frame->linesize[1], 
-							src_frame->linesize[1], vp->height/2);
-		av_image_copy_plane(pict.data[2], pict.linesize[2], 
-							(const uint8_t *)src_frame->data[2], src_frame->linesize[2], 
-							src_frame->linesize[2], vp->height/2);
+			av_image_copy_plane(pict.data[0], pict.linesize[0], 
+								(const uint8_t *)src_frame->data[0], src_frame->linesize[0], 
+								src_frame->linesize[0], vp->height);
+			av_image_copy_plane(pict.data[1], pict.linesize[1], 
+								(const uint8_t *)src_frame->data[1], src_frame->linesize[1], 
+								src_frame->linesize[1], vp->height/2);
+			av_image_copy_plane(pict.data[2], pict.linesize[2], 
+								(const uint8_t *)src_frame->data[2], src_frame->linesize[2], 
+								src_frame->linesize[2], vp->height/2);
 #endif
+		} else {
+			is->img_convert_ctx = sws_getCachedContext(is->img_convert_ctx,
+													   vp->width, vp->height, vp->pix_fmt, 
+													   vp->width, vp->height, PIX_FMT_YUV420P, 
+													   SWS_BICUBIC, NULL, NULL, NULL);
+			assert (is->img_convert_ctx);
+			sws_scale(is->img_convert_ctx, (void*)src_frame->data, src_frame->linesize,
+					  0, vp->height, pict.data, pict.linesize);
+		}
 		
 		vp->pts = pts;
 		vp->pos = pos;
