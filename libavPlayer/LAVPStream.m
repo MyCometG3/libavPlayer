@@ -190,21 +190,25 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	newPosition = (newPosition<0.0 ? 0.0 : newPosition);
 	newPosition = (newPosition>1.0 ? 1.0 : newPosition);
 	
-	self.busy = YES;
-	
-	// 
 	BOOL muted = [self muted];
 	if (!muted) [self setMuted:YES];
-	double_t prevRate = [self rate];
 	
-	[decoder setPosition:newPosition*duration blocking:(prevRate == 0 ? YES : NO)];
+	self.busy = YES;
+	
+	double_t prevRate = [self rate];
+	BOOL seekExactly = (prevRate == 0 ? YES : NO);
+	
+	[decoder setPosition:newPosition*duration blocking:seekExactly];
 	
 	if (prevRate) [self setRate:prevRate];
+	
+	if (prevRate) usleep(125*1000);	// give some time to prepare new image
+	
+	self.busy = NO;
+	
 	if (!muted) [self setMuted:NO];
 	
 	//NSLog(@"seek finished");
-	
-	self.busy = NO;
 	
 	// Post notification
 	//NSLog(@"LAVPStreamDidEndNotification");
