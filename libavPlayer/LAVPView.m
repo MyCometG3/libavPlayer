@@ -245,7 +245,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void)drawRect:(NSRect)theRect
 {
-	if (!_stream.busy) return;
+	if (_stream.busy) return;
 	
 	// Update Image
 	[lock lock];
