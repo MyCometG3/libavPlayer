@@ -549,7 +549,7 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
 	is->decoder = opaque;	// (LAVPDecoder *)
 	is->loop = 1;
 	is->paused = 0;
-	//is->step = 1;
+	//is->show_status = 1;
 	//is->av_sync_type = AV_SYNC_VIDEO_MASTER;
 	is->audio_stream = -1;
 	is->video_stream = -1;
