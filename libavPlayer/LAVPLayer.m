@@ -334,7 +334,7 @@ bail:
 		// Render quad
 		[self renderQuad];
 		
-#if 0	// Not sure if it is required on CALayer yet
+#if 1
 		// Delete the texture and the FBO
 		if (FBOid) {
 			glDeleteTextures(1, &FBOTextureId);
