@@ -359,9 +359,15 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 					}
 					prev = diff;
 					
+					if (is->paused) break;
+					
 					usleep(10*1000);
 				}
 				//NSLog(@"diff = %.3f %d %@", diff, count, ((limit > count) ? @"" : @"timeout"));
+				
+				if (limit == count) {
+					NSLog(@"ERROR:%@: Seek timeout (offset = %.3f sec)", [self class], diff);
+				}
 			}
 			[self setRate:0.0];
 		}
