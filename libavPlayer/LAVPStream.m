@@ -195,7 +195,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	BOOL muted = [self muted];
 	if (!muted) [self setMuted:YES];
 	
-	self.busy = YES;
+	_busy = YES;
 	
 	double_t prevRate = [self rate];
 	
@@ -203,7 +203,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	
 	if (prevRate) [self setRate:prevRate];
 	
-	self.busy = NO;
+	_busy = NO;
 	
 	if (!muted) [self setMuted:NO];
 	

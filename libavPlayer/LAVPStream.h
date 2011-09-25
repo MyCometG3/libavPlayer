@@ -53,7 +53,7 @@ extern NSString * const LAVPStreamDidSeekNotification;
 @property (assign) double_t rate;
 @property (assign) Float32 volume;
 @property (assign) BOOL muted;
-@property (assign) BOOL busy;
+@property (readonly) BOOL busy;
 @property (readonly) BOOL eof;
 @property (assign) BOOL strictSeek;
 
