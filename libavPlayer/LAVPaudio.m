@@ -347,6 +347,16 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 {
 	//NSLog(@"LAVPAudioQueueInit");
 	
+	if (!avctx->sample_rate) {
+		// NOTE: is->outAQ, is->audioDispatchQueue are left uninitialized
+		
+		// Audio clock is not available
+		if (is->av_sync_type == AV_SYNC_AUDIO_MASTER) 
+			is->av_sync_type = AV_SYNC_VIDEO_MASTER;
+		
+		return;
+	}
+	
 	if (!is->outAQ) {
 		//
 		LAVPFillASBD(is, avctx);
@@ -383,6 +393,8 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 
 void LAVPAudioQueueStart(VideoState *is)
 {
+	if (!is->outAQ) return;
+	
 	//NSLog(@"LAVPAudioQueueStart");
 	
 	// Update playback rate
@@ -410,6 +422,8 @@ void LAVPAudioQueueStart(VideoState *is)
 
 void LAVPAudioQueuePause(VideoState *is)
 {
+	if (!is->outAQ) return;
+	
 	//NSLog(@"LAVPAudioQueuePause");
 	
 	OSStatus err = 0;
@@ -422,6 +436,8 @@ void LAVPAudioQueuePause(VideoState *is)
 
 void LAVPAudioQueueStop(VideoState *is)
 {
+	if (!is->outAQ) return;
+	
 	//NSLog(@"LAVPAudioQueueStop");
 	
 	OSStatus err = 0;
@@ -462,6 +478,8 @@ void LAVPAudioQueueStop(VideoState *is)
 
 void LAVPAudioQueueDealloc(VideoState *is)
 {
+	if (!is->outAQ) return;
+	
 	//NSLog(@"LAVPAudioQueueDealloc");
 	
 	OSStatus err = 0;
@@ -476,6 +494,8 @@ void LAVPAudioQueueDealloc(VideoState *is)
 
 AudioQueueParameterValue getVolume(VideoState *is)
 {
+	if (!is->outAQ) return 0.0;
+	
 	AudioQueueParameterValue volume;
 	OSStatus err = AudioQueueGetParameter(is->outAQ, kAudioQueueParam_Volume, &volume);
 	assert(!err);
@@ -484,12 +504,16 @@ AudioQueueParameterValue getVolume(VideoState *is)
 
 void setVolume(VideoState *is, AudioQueueParameterValue volume)
 {
+	if (!is->outAQ) return;
+	
 	OSStatus err = AudioQueueSetParameter(is->outAQ, kAudioQueueParam_Volume, volume);
 	assert(!err);
 }
 
 BOOL audio_isPitchChanged(VideoState *is)
 {
+	if (!is->outAQ) return NO;
+	
 	OSStatus err = 0;
 	
 	// Compare current playrate b/w AudioQueue and VideoState
@@ -508,6 +532,8 @@ BOOL audio_isPitchChanged(VideoState *is)
 
 void audio_updatePitch(VideoState *is)
 {
+	if (!is->outAQ) return;
+	
 	OSStatus err = 0;
 	
 	assert(is->playRate > 0.0);
