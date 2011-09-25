@@ -339,11 +339,11 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 				if (!is->seek_req) break;
 			}
 		}
-		if (blocking) {
+		{
 			// seek wait - blocking
 			double_t rate = [self rate];
 			if (!rate) [self setRate:8.0];
-			{
+			if (blocking) {
 				// wait till time error is less than allowed drift
 				double_t diff = get_master_clock(is) - ts/1.0e6;
 				double_t prev = is->ic->duration;
@@ -368,6 +368,8 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 				if (limit == count) {
 					NSLog(@"ERROR:%@: Seek timeout (offset = %.3f sec)", [self class], diff);
 				}
+			} else {
+				usleep(50*1000);	// give some time to prepare new image
 			}
 			[self setRate:0.0];
 		}
