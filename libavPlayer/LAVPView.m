@@ -234,6 +234,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
+
+		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(receiveDidWake:) name:NSWorkspaceDidWakeNotification object:nil];
 	}
 	
 	return self;
@@ -674,6 +676,11 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	if (sender == _stream) {
 		lastPTS = -1;
 	}
+}
+
+- (void) receiveDidWake: (NSNotification*)aNotification
+{
+	lastPTS = -1;
 }
 
 /* =============================================================================================== */
