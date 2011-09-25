@@ -34,6 +34,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 @implementation LAVPStream
 @synthesize url;
 @synthesize busy = _busy;
+@synthesize strictSeek = _strictSeek;
 
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr
 {
@@ -42,6 +43,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 		url = [sourceURL copy];
 		_htOffset = CVGetCurrentHostTime();
 		currentVol = 1.0;
+		_strictSeek = YES;
 		
 		//
 		decoder = [[LAVPDecoder alloc] initWithURL:url error:errorPtr];
@@ -196,13 +198,10 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	self.busy = YES;
 	
 	double_t prevRate = [self rate];
-	BOOL seekExactly = (prevRate == 0 ? YES : NO);
 	
-	[decoder setPosition:newPosition*duration blocking:seekExactly];
+	[decoder setPosition:newPosition*duration blocking:_strictSeek];
 	
 	if (prevRate) [self setRate:prevRate];
-	
-	if (prevRate) usleep(125*1000);	// give some time to prepare new image
 	
 	self.busy = NO;
 	

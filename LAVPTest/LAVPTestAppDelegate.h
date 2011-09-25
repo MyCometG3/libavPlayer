@@ -23,6 +23,9 @@
 	NSString *layerTitle;
 	
 	NSTimer *timer;
+	double_t prevRate;
+	double_t layerPrev;
+	double_t viewPrev;
 }
 
 @property (assign) IBOutlet NSWindow *viewwindow;

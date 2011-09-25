@@ -41,6 +41,7 @@ extern NSString * const LAVPStreamDidSeekNotification;
 	BOOL _muted;
 	Float32 currentVol;
 	BOOL _busy;
+	BOOL _strictSeek;
 }
 
 @property (retain, readonly) NSURL *url;
@@ -54,6 +55,7 @@ extern NSString * const LAVPStreamDidSeekNotification;
 @property (assign) BOOL muted;
 @property (assign) BOOL busy;
 @property (readonly) BOOL eof;
+@property (assign) BOOL strictSeek;
 
 - (id) initWithURL:(NSURL *)url error:(NSError **)errorPtr;
 + (id) streamWithURL:(NSURL *)url error:(NSError **)errorPtr;

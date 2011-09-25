@@ -73,6 +73,8 @@ NSString* formatTime(QTTime qttime)
 	[self loadMovieAtURL:urlDefault];
 	
 	timer = nil;
+	layerPrev = -1;
+	viewPrev = -1;
 }
 
 - (void) loadMovieAtURL:(NSURL *)url
@@ -246,23 +248,52 @@ NSString* formatTime(QTTime qttime)
 
 - (IBAction) updatePosition:(id)sender
 {
-	static double_t layerPrev = -1;
-	static double_t viewPrev = -1;
 	NSSlider *pos = (NSSlider*) sender;
 	double_t newPos = [pos doubleValue];
 	
 	if ([pos window] == layerwindow && !layerstream.busy) {
+		if ([layerstream rate]) {
+			prevRate = [layerstream rate];
+			[layerstream stop];
+			layerstream.strictSeek = NO;
+		}
 		if (newPos != layerPrev) {
 			[layerstream setPosition:newPos];
 			layerPrev = newPos;
 		}
 	}
 	if ([pos window] == viewwindow && !viewstream.busy) {
+		if ([viewstream rate]) {
+			prevRate = [viewstream rate];
+			[viewstream stop];
+			viewstream.strictSeek = NO;
+		}
 		if (newPos != viewPrev) {
 			[viewstream setPosition:newPos];
 			viewPrev = newPos;
 		}
 	}
+	
+    SEL trackingEndedSelector = @selector(finishUpdatePosition:);
+    [NSObject cancelPreviousPerformRequestsWithTarget:self
+											 selector:trackingEndedSelector object:sender];
+    [self performSelector:trackingEndedSelector withObject:sender afterDelay:0.0];
+}
+
+- (void) finishUpdatePosition:(id)sender
+{
+	NSSlider *pos = (NSSlider*) sender;
+	if ([pos window] == layerwindow && !layerstream.busy) {
+		[layerstream setRate:prevRate];
+		layerstream.strictSeek = YES;
+	}
+	if ([pos window] == viewwindow && !viewstream.busy) {
+		[viewstream setRate:prevRate];
+		viewstream.strictSeek = YES;
+	}
+	prevRate = 0;
+	layerPrev = -1;
+	viewPrev = -1;
 }
 
 @end
