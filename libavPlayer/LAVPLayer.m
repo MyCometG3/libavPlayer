@@ -42,6 +42,8 @@
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
 - (CVPixelBufferRef) getCVPixelBuffer;
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb;
+- (void) streamDidSeek:(NSNotification *)aNotification;
+- (void) redrawRequest:(NSNotification *)aNotification;
 
 @end
 
@@ -186,9 +188,11 @@
 		//
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSApplicationWillTerminateNotification object:nil];
 		
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(redrawRequest:) name:NSWindowDidMoveNotification object:nil];
+		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
 		
-		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(receiveDidWake:) name:NSWorkspaceDidWakeNotification object:nil];
+		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(redrawRequest:) name:NSWorkspaceDidWakeNotification object:nil];
 	}
 	
 	return self;
@@ -725,7 +729,7 @@ bail:
 	}
 }
 
-- (void) receiveDidWake: (NSNotification*)aNotification
+- (void) redrawRequest:(NSNotification *)aNotification;
 {
 	lastPTS = -1;
 }

@@ -46,6 +46,8 @@
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
 - (CVPixelBufferRef) getCVPixelBuffer;
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb;
+- (void) streamDidSeek:(NSNotification *)aNotification;
+- (void) redrawRequest:(NSNotification *)aNotification;
 
 @end
 
@@ -80,6 +82,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		CVDisplayLinkSetCurrentCGDisplay(displayLink, newDisplayID);
 		currentDisplayID = newDisplayID;
 	}
+	
+	[self redrawRequest:nil];
 }
 
 - (uint64_t)startCVDisplayLink
@@ -235,7 +239,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
 
-		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(receiveDidWake:) name:NSWorkspaceDidWakeNotification object:nil];
+		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(redrawRequest:) name:NSWorkspaceDidWakeNotification object:nil];
 	}
 	
 	return self;
@@ -678,7 +682,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 }
 
-- (void) receiveDidWake: (NSNotification*)aNotification
+- (void) redrawRequest:(NSNotification *)aNotification
 {
 	lastPTS = -1;
 }
