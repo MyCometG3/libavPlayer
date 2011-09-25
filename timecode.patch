@@ -1,0 +1,17 @@
+diff --git a/libavformat/mov.c b/libavformat/mov.c
+index 70cd776..ad59d77 100644
+--- a/libavformat/mov.c
++++ b/libavformat/mov.c
+@@ -1854,6 +1854,12 @@ static int mov_read_trak(MOVContext *c, AVIOContext *pb, MOVAtom atom)
+         break;
+     }
+ 
++    if (st->codec->codec_tag == MKTAG('t','m','c','d')) {
++        av_log(c->fc, AV_LOG_WARNING, "Ignore timecode track\n");
++        st->start_time = AV_NOPTS_VALUE;
++        st->duration = AV_NOPTS_VALUE;
++    }
++
+     /* Do not need those anymore. */
+     av_freep(&sc->chunk_offsets);
+     av_freep(&sc->stsc_data);
