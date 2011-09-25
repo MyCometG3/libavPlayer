@@ -60,7 +60,8 @@ NSString* formatTime(QTTime qttime)
 	NSURL *url = [[NSUserDefaults standardUserDefaults] URLForKey:@"url"];
 	NSURL *urlDefault = [[NSBundle mainBundle] URLForResource:@"ColorBars" withExtension:@"mov"];
 	
-	if (url) {
+	BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
+	if (url && !shiftKey) {
 		NSError *error = NULL;
 		NSFileWrapper *file = [[[NSFileWrapper alloc] initWithURL:url 
 														 options:NSFileWrapperReadingImmediate 
