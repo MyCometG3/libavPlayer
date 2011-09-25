@@ -227,6 +227,8 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 {
 	//NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
 	
+	if ([decoder rate] == newRate) return;
+	
 	// stop notificatino timer
 	if (timer) {
 		[timer invalidate];
