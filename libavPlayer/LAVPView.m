@@ -201,6 +201,22 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	NSOpenGLPixelFormat *pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs] autorelease];
 	
+	if (!pixelFormat) {
+		NSOpenGLPixelFormatAttribute attrs[] =
+		{
+			NSOpenGLPFAAccelerated,
+			NSOpenGLPFANoRecovery,
+			NSOpenGLPFADoubleBuffer,
+			NSOpenGLPFAColorSize, 24,
+			NSOpenGLPFAAlphaSize,  8,
+			//NSOpenGLPFADepthSize, 16,	// no depth buffer
+			0
+		};
+		
+		pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs] autorelease];
+	}
+	assert(pixelFormat);
+	
 	// Initialize NSOpenGLView using specified pixelFormat
 	self = [super initWithFrame:frameRect pixelFormat:pixelFormat];
 	
@@ -289,8 +305,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		
 		if (!paused) {
 			// Prepare CIImage
-			CVPixelBufferRef pb;
-			double_t pts;
+			CVPixelBufferRef pb = NULL;
+			double_t pts = -2;
 			
 			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
 			
@@ -307,7 +323,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			
 			return kCVReturnError;
 		}
-		if (resized || !paused) {
+		if (resized) {
 			[lock lock];
 			[self drawImage];
 			[lock unlock];
@@ -363,7 +379,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		// Render quad
 		[self renderQuad];
 		
-#if 1	// Under CVDisplayLink, reusing FBO makes OpenGL unstable...
+#if 1
 		// Delete the texture and the FBO
 		if (FBOid) {
 			glDeleteTextures(1, &FBOTextureId);

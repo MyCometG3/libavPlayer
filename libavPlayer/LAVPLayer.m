@@ -49,9 +49,27 @@
 
 @implementation LAVPLayer
 
+void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
+									  CGDisplayChangeSummaryFlags flags,
+									  void *userInfo)
+{
+	NSAutoreleasePool *pool = [NSAutoreleasePool new];
+	if (flags & kCGDisplaySetModeFlag) {
+		LAVPLayer *self = userInfo;
+		dispatch_async(dispatch_get_main_queue(), ^{
+			// TODO: Not enough for GPU switching...
+			self.asynchronous = NO;
+			self.asynchronous = YES;
+		} );
+    }
+	[pool drain];
+}
+
 - (void)invalidate:(NSNotification*)inNotification
 {
 	//NSLog(@"invalidate:");
+	
+    CGDisplayRemoveReconfigurationCallback(MyDisplayReconfigurationCallBack, self);
 	
 	// Resign observer
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -154,6 +172,23 @@
 		};
 		
 		CGLChoosePixelFormat(attributes, &_cglPixelFormat, &numPixelFormats);
+		multiSample = YES;
+		
+		if (!_cglPixelFormat) {
+			CGLPixelFormatAttribute attributes[] =
+			{
+				kCGLPFAAccelerated,
+				kCGLPFANoRecovery,
+				kCGLPFADoubleBuffer,
+				kCGLPFAColorSize, 24,
+				kCGLPFAAlphaSize,  8,
+				//kCGLPFADepthSize, 16,	// no depth buffer
+				0
+			};
+			
+			CGLChoosePixelFormat(attributes, &_cglPixelFormat, &numPixelFormats);
+			multiSample = NO;
+		}
 		assert(_cglPixelFormat);
 		
 		_cglContext = [super copyCGLContextForPixelFormat:_cglPixelFormat];
@@ -193,6 +228,8 @@
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
 		
 		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(redrawRequest:) name:NSWorkspaceDidWakeNotification object:nil];
+		
+		CGDisplayRegisterReconfigurationCallback(MyDisplayReconfigurationCallBack, self);
 	}
 	
 	return self;
@@ -259,8 +296,8 @@
 	
 	if (!paused) {
 		// Prepare CIImage
-		CVPixelBufferRef pb;
-		double_t pts;
+		CVPixelBufferRef pb = NULL;
+		double_t pts = -2;
 		
 		if (!timeStamp) 
 			pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
@@ -278,7 +315,7 @@
 		
 		goto bail;
 	}
-	if (resized || !paused) {
+	if (resized || !multiSample) {
 		[lock lock];
 		[self drawImage];
 		[lock unlock];
