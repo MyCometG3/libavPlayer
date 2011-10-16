@@ -729,7 +729,7 @@ bail:
 		image = NULL;
 	}
 	if (pixelbuffer) {
-		CVPixelBufferRetain(pixelbuffer);
+		CVPixelBufferRelease(pixelbuffer);
 		pixelbuffer = NULL;
 	}
 	
