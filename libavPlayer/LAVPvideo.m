@@ -628,7 +628,7 @@ bail:
 	return 0;
 }
 
-int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch) 
+int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch) 
 {
 	VideoState *is = opaque;
 	uint8_t * out[4] = {0};
@@ -656,7 +656,7 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 			for (int index = 0; index < is->pictq_size; index++) {
 				tmp = &is->pictq[index];
 				
-				if (0.0 <= tmp->pts && tmp->pts <= targetpts) {
+				if (0.0 <= tmp->pts && tmp->pts <= *targetpts) {
 					if (!vp) {
 						vp = tmp;
 					} else if (tmp->pts > vp->pts) {
@@ -704,6 +704,7 @@ int copyImage(void *opaque, double_t targetpts, uint8_t* data, int pitch)
 			if (result > 0) {
 				//NSLog(@"copyImage(%.3lf) (%d); %.3lf", targetpts, is->pictq_size, vp->pts-targetpts);
 				is->lastPTScopied = vp->pts;
+				*targetpts = vp->pts;
 				
 				LAVPUnlockMutex(is->pictq_mutex);
 				return 1;

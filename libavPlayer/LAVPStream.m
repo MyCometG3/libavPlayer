@@ -136,7 +136,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	position = (position > duration ? duration : position);
 	
 	//
-	CVPixelBufferRef pb = [decoder getPixelBufferForPTS:position];
+	CVPixelBufferRef pb = [decoder getPixelBufferForPTS:&position];
 	if (pb) *pts = position;
 	return pb;
 }

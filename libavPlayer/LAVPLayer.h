@@ -32,7 +32,6 @@
 	CIContext *ciContext;
 	CIImage *image;
 	CVPixelBufferRef pixelbuffer;
-	CGRect prevRect;
 	NSLock *lock;
 	double_t lastPTS;
 	

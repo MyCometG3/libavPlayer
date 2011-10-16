@@ -38,7 +38,7 @@
 - (void) threadMain;
 
 - (BOOL) readyForPTS:(double_t)pts;
-- (CVPixelBufferRef) getPixelBufferForPTS:(double_t)pts;
+- (CVPixelBufferRef) getPixelBufferForPTS:(double_t*)pts;
 - (BOOL) readyForCurrent;
 - (CVPixelBufferRef) getPixelBufferForCurrent:(double_t*)pts;
 - (NSSize) frameSize;

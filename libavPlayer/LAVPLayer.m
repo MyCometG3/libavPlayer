@@ -267,10 +267,33 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
+		BOOL ready;
 		if (!timeStamp) 
-			return [_stream readyForCurrent];
+			ready = [_stream readyForCurrent];
 		else
-			return [_stream readyForTime:timeStamp];
+			ready = [_stream readyForTime:timeStamp];
+		
+		if (ready) {
+			// Prepare CIImage
+			CVPixelBufferRef pb = NULL;
+			double_t pts = -2;
+			
+			if (!timeStamp) 
+				pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
+			else
+				pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
+			
+			if (pb && lastPTS != pts) {
+				lastPTS = pts;
+				
+				[lock lock];
+				[self setCVPixelBuffer:pb];
+				[lock unlock];
+				
+				return YES;
+			}
+		}
+		return NO;
 	} else {
 		return NO;
 	}
@@ -281,45 +304,9 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 			 forLayerTime:(CFTimeInterval)timeInterval 
 			  displayTime:(const CVTimeStamp *)timeStamp
 {
-	// Check layer resize
-	BOOL resized = NO;
-	if (!CGRectEqualToRect(prevRect, [self bounds])) {
-		prevRect = [self bounds];
-		resized = YES;
-	}
-	
-	// Check pause
-	BOOL paused = NO;
-	if ( [_stream rate] == 0 && lastPTS >= 0) {
-		paused = YES;
-	}
-	
-	if (!paused) {
-		// Prepare CIImage
-		CVPixelBufferRef pb = NULL;
-		double_t pts = -2;
-		
-		if (!timeStamp) 
-			pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
-		else
-			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
-		
-		if (pb && lastPTS != pts) {
-			lastPTS = pts;
-			
-			[lock lock];
-			[self setCVPixelBuffer:pb];
-			[self drawImage];
-			[lock unlock];
-		}
-		
-		goto bail;
-	}
-	if (resized || !multiSample) {
-		[lock lock];
-		[self drawImage];
-		[lock unlock];
-	}
+	[lock lock];
+	[self drawImage];
+	[lock unlock];
 	
 bail:
 	// Finishing touch by super class
