@@ -172,7 +172,6 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 		};
 		
 		CGLChoosePixelFormat(attributes, &_cglPixelFormat, &numPixelFormats);
-		multiSample = YES;
 		
 		if (!_cglPixelFormat) {
 			CGLPixelFormatAttribute attributes[] =
@@ -187,7 +186,6 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 			};
 			
 			CGLChoosePixelFormat(attributes, &_cglPixelFormat, &numPixelFormats);
-			multiSample = NO;
 		}
 		assert(_cglPixelFormat);
 		

@@ -44,7 +44,6 @@
 	CGLContextObj       _cglContext;
 	
 	NSArray *gravities;
-	BOOL	multiSample;
 }
 
 @property (retain) LAVPStream *stream;
