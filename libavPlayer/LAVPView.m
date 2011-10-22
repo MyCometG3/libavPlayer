@@ -286,29 +286,21 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 - (CVReturn)drawFrameForTime:(const CVTimeStamp*)timeStamp
 {
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
-		if (![_stream readyForTime:timeStamp]) {
-			return kCVReturnError;
-		}
+		BOOL ready;
+		if (!timeStamp) 
+			ready = [_stream readyForCurrent];
+		else
+			ready = [_stream readyForTime:timeStamp];
 		
-		// Check view resize
-		BOOL resized = NO;
-		if (!NSEqualRects(prevRect, [self bounds])) {
-			prevRect = [self bounds];
-			resized = YES;
-		}
-		
-		// Check pause
-		BOOL paused = NO;
-		if ( [_stream rate] == 0 && lastPTS >= 0) {
-			paused = YES;
-		}
-		
-		if (!paused) {
+		if (ready) {
 			// Prepare CIImage
 			CVPixelBufferRef pb = NULL;
 			double_t pts = -2;
 			
-			pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
+			if (!timeStamp) 
+				pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
+			else
+				pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
 			
 			if (pb && lastPTS != pts) {
 				lastPTS = pts;
@@ -320,20 +312,18 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 				
 				return kCVReturnSuccess;
 			}
-			
-			return kCVReturnError;
 		}
-		if (resized) {
+#if 0
+		if (lastPTS < 0) {
 			[lock lock];
 			[self drawImage];
 			[lock unlock];
 			
 			return kCVReturnSuccess;
 		}
-		
+#endif
 		return kCVReturnError;
 	} else {
-		//NSLog(@"LAVPView: getFrameForTime: stream is not ready.");
 		return kCVReturnError;
 	}
 }

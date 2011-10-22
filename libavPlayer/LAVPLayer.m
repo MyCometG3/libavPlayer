@@ -291,6 +291,11 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 				return YES;
 			}
 		}
+#if 0
+		if (lastPTS < 0) {
+			return YES;
+		}
+#endif
 		return NO;
 	} else {
 		return NO;
