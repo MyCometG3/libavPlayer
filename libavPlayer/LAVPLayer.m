@@ -786,6 +786,7 @@ bail:
 	}
 	
 	//
+	[_stream stop];
 	[_stream autorelease];
 	_stream = [newStream retain];
 	
