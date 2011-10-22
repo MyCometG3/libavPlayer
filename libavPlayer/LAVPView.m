@@ -42,6 +42,7 @@
 - (void) setFBO;
 - (void) renderCoreImageToFBO;
 - (void) renderQuad;
+- (void) unsetFBO;
 
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size ;
 - (CVPixelBufferRef) getCVPixelBuffer;
@@ -369,15 +370,8 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		// Render quad
 		[self renderQuad];
 		
-#if 1
 		// Delete the texture and the FBO
-		if (FBOid) {
-			glDeleteTextures(1, &FBOTextureId);
-			glDeleteFramebuffersEXT(1, &FBOid);
-			FBOTextureId = 0;
-			FBOid = 0;
-		}
-#endif
+        [self unsetFBO];
 	} else {
 		NSSize dstSize = [self bounds].size;
 		
@@ -610,6 +604,18 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	// Unbind Texture
 	glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+}
+
+/*
+ Remove FBO and Texture
+ */
+- (void)unsetFBO {
+    if (FBOid) {
+        glDeleteTextures(1, &FBOTextureId);
+        glDeleteFramebuffersEXT(1, &FBOid);
+        FBOTextureId = 0;
+        FBOid = 0;
+    }
 }
 
 /* =============================================================================================== */
