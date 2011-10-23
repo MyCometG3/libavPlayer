@@ -387,6 +387,8 @@ bail:
 	// 
 	CGLUnlockContext(_cglContext);
 	CGLSetCurrentContext(savedContext);
+	
+	CGLFlushDrawable(_cglContext);
 }
 
 /*
