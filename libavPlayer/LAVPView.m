@@ -289,7 +289,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
 		BOOL ready;
 		if (!timeStamp) 
-			ready = [_stream readyForCurrent];
+			;//ready = [_stream readyForCurrent];
 		else
 			ready = [_stream readyForTime:timeStamp];
 		
@@ -299,7 +299,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			double_t pts = -2;
 			
 			if (!timeStamp) 
-				pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
+				;//pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
 			else
 				pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
 			
@@ -313,6 +313,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 				
 				return kCVReturnSuccess;
 			}
+		}
+		if (!NSEqualRects(prevRect, [self bounds])) {
+			prevRect = [self bounds];
+			[lock lock];
+			[self drawImage];
+			[lock unlock];
+			
+			return kCVReturnSuccess;
 		}
 #if 0
 		if (lastPTS < 0) {

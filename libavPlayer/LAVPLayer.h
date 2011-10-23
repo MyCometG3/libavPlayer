@@ -34,6 +34,7 @@
 	CVPixelBufferRef pixelbuffer;
 	NSLock *lock;
 	double_t lastPTS;
+	NSRect prevRect;
 	
 	GLuint	FBOid;
 	GLuint	FBOTextureId;

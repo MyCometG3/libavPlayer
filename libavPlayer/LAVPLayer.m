@@ -268,7 +268,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
 		BOOL ready;
 		if (!timeStamp) 
-			ready = [_stream readyForCurrent];
+			;//ready = [_stream readyForCurrent];
 		else
 			ready = [_stream readyForTime:timeStamp];
 		
@@ -278,7 +278,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 			double_t pts = -2;
 			
 			if (!timeStamp) 
-				pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
+				;//pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
 			else
 				pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
 			
@@ -291,6 +291,10 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 				
 				return YES;
 			}
+		}
+		if (!NSEqualRects(prevRect, [self bounds])) {
+			prevRect = [self bounds];
+			return YES;
 		}
 #if 0
 		if (lastPTS < 0) {
