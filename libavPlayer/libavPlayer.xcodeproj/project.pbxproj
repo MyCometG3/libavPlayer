@@ -79,8 +79,8 @@
 		16A1963F13ADF83E008825FF /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = /Library/Frameworks;
-			dstSubfolderSpec = 0;
+			dstPath = Library/Frameworks;
+			dstSubfolderSpec = 10;
 			files = (
 				1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in CopyFiles */,
 			);
