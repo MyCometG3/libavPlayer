@@ -292,15 +292,15 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 				return YES;
 			}
 		}
+		
 		if (!NSEqualRects(prevRect, [self bounds])) {
 			prevRect = [self bounds];
 			return YES;
 		}
-#if 0
 		if (lastPTS < 0) {
 			return YES;
 		}
-#endif
+		
 		return NO;
 	} else {
 		return NO;

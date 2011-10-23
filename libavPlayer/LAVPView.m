@@ -314,6 +314,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 				return kCVReturnSuccess;
 			}
 		}
+		
 		if (!NSEqualRects(prevRect, [self bounds])) {
 			prevRect = [self bounds];
 			[lock lock];
@@ -322,7 +323,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			
 			return kCVReturnSuccess;
 		}
-#if 0
 		if (lastPTS < 0) {
 			[lock lock];
 			[self drawImage];
@@ -330,7 +330,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			
 			return kCVReturnSuccess;
 		}
-#endif
+		
 		return kCVReturnError;
 	} else {
 		return kCVReturnError;
