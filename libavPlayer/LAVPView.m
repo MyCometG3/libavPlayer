@@ -287,7 +287,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 - (CVReturn)drawFrameForTime:(const CVTimeStamp*)timeStamp
 {
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
-		BOOL ready;
+		BOOL ready = NO;
 		if (!timeStamp) 
 			;//ready = [_stream readyForCurrent];
 		else
