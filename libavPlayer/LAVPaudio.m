@@ -60,27 +60,11 @@ int audio_write_get_buf_size(VideoState *is)
 /* get the current audio clock value */
 double get_audio_clock(VideoState *is)
 {
-#if 1
 	if (is->paused) {
 		return is->audio_current_pts;
 	} else {
 		return is->audio_current_pts_drift + av_gettime() / 1000000.0;
 	}
-#else
-	double pts;
-	int hw_buf_size, bytes_per_sec;
-	pts = is->audio_clock;
-	hw_buf_size = audio_write_get_buf_size(is);
-	bytes_per_sec = 0;
-	if (is->audio_st) {
-		bytes_per_sec = is->audio_st->codec->sample_rate *
-		2 * is->audio_st->codec->channels;
-	}
-	bytes_per_sec *= is->playRate;	// Acceleration
-	if (bytes_per_sec)
-		pts -= (double)hw_buf_size / bytes_per_sec;
-	return pts;
-#endif
 }
 
 /* return the new audio buffer size (samples can be added or deleted
