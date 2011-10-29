@@ -31,6 +31,11 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 #define AV_TIME_BASE            1000000
 
+// class extension
+@interface LAVPStream ()
+@property (readwrite) BOOL busy;
+@end
+
 @implementation LAVPStream
 @synthesize url;
 @synthesize busy = _busy;
@@ -195,7 +200,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	BOOL muted = [self muted];
 	if (!muted) [self setMuted:YES];
 	
-	_busy = YES;
+	self.busy = YES;
 	
 	double_t prevRate = [self rate];
 	
@@ -203,7 +208,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	
 	if (prevRate) [self setRate:prevRate];
 	
-	_busy = NO;
+	self.busy = NO;
 	
 	if (!muted) [self setMuted:NO];
 	
