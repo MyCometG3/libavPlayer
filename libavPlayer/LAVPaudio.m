@@ -37,8 +37,6 @@
 
 /* =========================================================== */
 
-int audio_write_get_buf_size(VideoState *is);
-
 int synchronize_audio(VideoState *is, short *samples,
 					  int samples_size1, double pts);
 int audio_decode_frame(VideoState *is, double *pts_ptr);
@@ -49,13 +47,6 @@ void audio_updatePitch(VideoState *is);
 /* =========================================================== */
 
 #pragma mark -
-
-/* get the current audio output buffer size, in samples. We
- cannot have a precise information */
-int audio_write_get_buf_size(VideoState *is)
-{
-	return is->audio_buf_size - is->audio_buf_index;
-}
 
 /* get the current audio clock value */
 double get_audio_clock(VideoState *is)
