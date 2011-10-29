@@ -101,7 +101,6 @@ typedef struct VideoState {
 	// unused
 	AVFormatContext *avformat_opts;
 	struct SwsContext *sws_opts;
-	struct SwsContext *img_convert_ctx;
 	int sws_flags;
 	
 	AVCodecContext *avcodec_opts[AVMEDIA_TYPE_NB];
@@ -175,6 +174,7 @@ typedef struct VideoState {
 	VideoPicture pictq[VIDEO_PICTURE_QUEUE_SIZE];
 	int pictq_size, pictq_rindex, pictq_windex;
 	struct SwsContext *sws420to422;
+	struct SwsContext *img_convert_ctx;
 	
 	// LAVPsubs
 	int subtitle_stream_changed;
