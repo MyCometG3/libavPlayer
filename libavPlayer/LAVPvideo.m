@@ -530,8 +530,7 @@ int video_thread(void *arg)
 			goto the_end;
 		}
 		if (is->step)
-			if (is)
-				stream_pause(is);
+			stream_pause(is);
 		
 		[pool drain];
 	}
