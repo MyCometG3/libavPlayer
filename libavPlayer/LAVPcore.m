@@ -163,6 +163,7 @@ void stream_component_close(VideoState *is, int stream_index)
 			LAVPAudioQueueDealloc(is);
 			
 			packet_queue_end(&is->audioq);
+			av_free_packet(&is->audio_pkt);
 			if (is->reformat_ctx)
 				av_audio_convert_free(is->reformat_ctx);
 			is->reformat_ctx = NULL;
