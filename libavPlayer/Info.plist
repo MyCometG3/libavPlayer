@@ -7,7 +7,7 @@
 	<key>CFBundleExecutable</key>
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleGetInfoString</key>
-	<string>1.9 (libav* from libav 34200), Copyright MyCometG3, 2011</string>
+	<string>2.0 (libav* from ffmpeg xxxxx), Copyright MyCometG3, 2011, 2013</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
 	<key>CFBundleIdentifier</key>
@@ -19,13 +19,13 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.9</string>
+	<string>2.0a1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2011.10.30</string>
+	<string>2013.12.01</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright MyCometG3, 2011</string>
+	<string>Copyright MyCometG3, 2011, 2013</string>
 	<key>NSPrincipalClass</key>
 	<string></string>
 </dict>

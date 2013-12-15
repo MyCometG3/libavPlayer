@@ -22,7 +22,7 @@
 			isa = PBXAggregateTarget;
 			buildConfigurationList = 16A1964713ADF850008825FF /* Build configuration list for PBXAggregateTarget "build_and_copy" */;
 			buildPhases = (
-				16A1963F13ADF83E008825FF /* CopyFiles */,
+				16A1963F13ADF83E008825FF /* Copy Files */,
 			);
 			dependencies = (
 				16A1968B13ADF965008825FF /* PBXTargetDependency */,
@@ -33,8 +33,9 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* libavPlayer.framework */; };
+		1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in Copy Files */ = {isa = PBXBuildFile; fileRef = 8DC2EF5B0486A6940098B216 /* libavPlayer.framework */; };
 		164826C013D399A2008E16A7 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 164826BB13D39785008E16A7 /* AudioToolbox.framework */; };
+		1660410318292F2B00E78594 /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1660410218292F2B00E78594 /* libiconv.dylib */; };
 		166F893813E0555A00B74CCA /* LAVPthread.c in Sources */ = {isa = PBXBuildFile; fileRef = 166F893613E0555A00B74CCA /* LAVPthread.c */; };
 		166F893913E0555A00B74CCA /* LAVPthread.h in Headers */ = {isa = PBXBuildFile; fileRef = 166F893713E0555A00B74CCA /* LAVPthread.h */; };
 		169D704313EE2A5700031A4A /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 169D704213EE2A5700031A4A /* QTKit.framework */; };
@@ -60,6 +61,7 @@
 		16A1969C13ADFA01008825FF /* libswscale.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A18F8B13AC5536008825FF /* libswscale.a */; };
 		16A196A013ADFA23008825FF /* LAVPaudio.m in Sources */ = {isa = PBXBuildFile; fileRef = 16A193C513ADC268008825FF /* LAVPaudio.m */; };
 		16A1971613ADFE22008825FF /* libavPlayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 16A1971513ADFE22008825FF /* libavPlayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		16CFAA2B183CE911008DD4BF /* libswresample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 16009698183C8E1E0026B528 /* libswresample.a */; };
 		16E3B1C213BA0AE4000E6062 /* LAVPutil.c in Sources */ = {isa = PBXBuildFile; fileRef = 16E3B1C113BA0AE4000E6062 /* LAVPutil.c */; };
 		16E3B23213BA752C000E6062 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 16A196F813ADFDC1008825FF /* Cocoa.framework */; };
 		8DC2EF530486A6940098B216 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C1666FE841158C02AAC07 /* InfoPlist.strings */; };
@@ -76,14 +78,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		16A1963F13ADF83E008825FF /* CopyFiles */ = {
+		16A1963F13ADF83E008825FF /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = Library/Frameworks;
 			dstSubfolderSpec = 10;
 			files = (
-				1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in CopyFiles */,
+				1600FA3E141C8CE4006BC3FB /* libavPlayer.framework in Copy Files */,
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -92,7 +95,10 @@
 		0867D69BFE84028FC02AAC07 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		0867D6A5FE840307C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		089C1667FE841158C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		16009698183C8E1E0026B528 /* libswresample.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libswresample.a; path = libav/libswresample.a; sourceTree = "<group>"; };
+		1600969A183C8E2E0026B528 /* swresample.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = swresample.h; path = libav/libswresample/swresample.h; sourceTree = "<group>"; };
 		164826BB13D39785008E16A7 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		1660410218292F2B00E78594 /* libiconv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.dylib; path = usr/lib/libiconv.dylib; sourceTree = SDKROOT; };
 		166F893613E0555A00B74CCA /* LAVPthread.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = LAVPthread.c; sourceTree = "<group>"; };
 		166F893713E0555A00B74CCA /* LAVPthread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPthread.h; sourceTree = "<group>"; };
 		169D704213EE2A5700031A4A /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = System/Library/Frameworks/QTKit.framework; sourceTree = SDKROOT; };
@@ -121,7 +127,7 @@
 		16A193C413ADC268008825FF /* LAVPaudio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPaudio.h; sourceTree = "<group>"; };
 		16A193C513ADC268008825FF /* LAVPaudio.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LAVPaudio.m; sourceTree = "<group>"; };
 		16A193E213ADC62A008825FF /* LAVPcore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPcore.h; sourceTree = "<group>"; };
-		16A193E313ADC62A008825FF /* LAVPcore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LAVPcore.m; sourceTree = "<group>"; };
+		16A193E313ADC62A008825FF /* LAVPcore.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; lineEnding = 0; path = LAVPcore.m; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objc; };
 		16A1955813ADF584008825FF /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		16A1955A13ADF58D008825FF /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		16A195A813ADF5F1008825FF /* LAVPLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LAVPLayer.h; sourceTree = "<group>"; };
@@ -142,6 +148,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1660410318292F2B00E78594 /* libiconv.dylib in Frameworks */,
 				16A18FAC13AC567E008825FF /* CoreVideo.framework in Frameworks */,
 				16A18FF113AC57CC008825FF /* libz.dylib in Frameworks */,
 				16A18FF413AC57E2008825FF /* libbz2.dylib in Frameworks */,
@@ -153,6 +160,7 @@
 				16A1969C13ADFA01008825FF /* libswscale.a in Frameworks */,
 				16E3B23213BA752C000E6062 /* Cocoa.framework in Frameworks */,
 				164826C013D399A2008E16A7 /* AudioToolbox.framework in Frameworks */,
+				16CFAA2B183CE911008DD4BF /* libswresample.a in Frameworks */,
 				169D704313EE2A5700031A4A /* QTKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -226,6 +234,7 @@
 				164826BB13D39785008E16A7 /* AudioToolbox.framework */,
 				16A18FF013AC57CC008825FF /* libz.dylib */,
 				16A18FF313AC57E2008825FF /* libbz2.dylib */,
+				1660410218292F2B00E78594 /* libiconv.dylib */,
 			);
 			name = "Linked Frameworks";
 			sourceTree = "<group>";
@@ -247,10 +256,12 @@
 				16A18F9913AC556F008825FF /* avformat.h */,
 				16A18F9713AC555E008825FF /* avutil.h */,
 				16A18F9513AC5554008825FF /* swscale.h */,
+				1600969A183C8E2E0026B528 /* swresample.h */,
 				16A18F8A13AC5536008825FF /* libavcodec.a */,
 				16A18F8D13AC5536008825FF /* libavformat.a */,
 				16A18F8C13AC5536008825FF /* libavutil.a */,
 				16A18F8B13AC5536008825FF /* libswscale.a */,
+				16009698183C8E1E0026B528 /* libswresample.a */,
 			);
 			name = libav;
 			sourceTree = "<group>";
@@ -368,7 +379,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "say \"Building intel binary.\" &\necho;pwd;echo\n\nTHESDK=\"$DEVELOPER_SDK_DIR/MacOSX10.6.sdk\"\nTHEARC=\"x86_64\"; THECPU=\"core2\"\nTHEOPT=\"-m64 -mtune=core2 \" # -ffast-math -falign-loops=16 -fstrict-aliasing\n\n# Use yasm from MacPort\nPATH=$PATH:/opt/local/bin/\n\ncd libav\n./configure --enable-cross-compile --arch=$THEARC --cpu=$THECPU --cc=llvm-gcc-4.2 --enable-small --target-os=darwin \\\n --enable-decoders --disable-encoders --enable-demuxers --disable-muxers --enable-parsers --disable-avdevice \\\n --disable-postproc --disable-avfilter --disable-filters --enable-protocols --enable-network \\\n --enable-pthreads --enable-gpl --disable-avconv --disable-ffmpeg --disable-ffprobe --disable-ffserver --disable-ffplay \\\n --extra-ldflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wl,-syslibroot,$THESDK \" \\\n --extra-cflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wno-deprecated-declarations $THEOPT \" \\\n --enable-protocol=file \\\n|| { echo -- ERROR on confiure --; tail config.err; exit 1; }\n\necho -- Run make clean --\nmake clean || { echo -- ERROR on make clean --; exit 1; }\n\necho -- Run make lib --\nmake -j4 || { exit 1; }\n\ncp -p lib*/*.a ./\n#strip -x *.a\n\necho;echo \"Done\";echo\nexit 0";
+			shellScript = "say -v Allison \"Building intel binary.\" &\necho;pwd;echo\n\nTHESDK=\"$DEVELOPER_SDK_DIR/MacOSX10.6.sdk\"\nTHEARC=\"x86_64\"; THECPU=\"core2\"\nTHEOPT=\"-m64 -mtune=core2 \" # -ffast-math -falign-loops=16 -fstrict-aliasing\n\n# Use yasm from MacPort\nPATH=$PATH:/opt/local/bin/\n\ncd libav\n./configure --enable-cross-compile --arch=$THEARC --cpu=$THECPU --cc=clang --enable-small --target-os=darwin \\\n --enable-decoders --disable-encoders --enable-demuxers --disable-muxers --enable-parsers --disable-avdevice \\\n --disable-postproc --disable-avfilter --disable-filters --enable-protocols --enable-network \\\n --enable-pthreads --enable-gpl --disable-ffmpeg --disable-ffprobe --disable-ffserver --disable-ffplay \\\n --extra-ldflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wl,-syslibroot,$THESDK \" \\\n --extra-cflags=\" -arch $THEARC -isystem $THESDK -mmacosx-version-min=10.6 -Wno-deprecated-declarations $THEOPT \" \\\n --enable-protocol=file \\\n|| { echo -- ERROR on confiure --; tail config.err; exit 1; }\n\necho -- Run make clean --\nmake clean || { echo -- ERROR on make clean --; exit 1; }\n\necho -- Run make lib --\nmake -j4 || { exit 1; }\n\ncp -p lib*/*.a ./\n#strip -x *.a\n\necho;echo \"Done\";echo\nexit 0";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -420,6 +431,7 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				PRODUCT_NAME = buildLibav;
+				SDKROOT = macosx10.8;
 			};
 			name = Debug;
 		};
@@ -429,6 +441,7 @@
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				PRODUCT_NAME = buildLibav;
+				SDKROOT = macosx10.8;
 				ZERO_LINK = NO;
 			};
 			name = Release;
@@ -457,6 +470,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				COPY_PHASE_STRIP = NO;
 				DYLIB_COMPATIBILITY_VERSION = 1.0;
 				DYLIB_CURRENT_VERSION = 1.9;
@@ -467,7 +481,6 @@
 				);
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = YES;
-				GCC_ENABLE_OBJC_GC = supported;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = libavPlayer_Prefix.pch;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
@@ -488,6 +501,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DYLIB_COMPATIBILITY_VERSION = 1.0;
 				DYLIB_CURRENT_VERSION = 1.9;
@@ -498,7 +512,6 @@
 				);
 				FRAMEWORK_VERSION = A;
 				GCC_DYNAMIC_NO_PIC = YES;
-				GCC_ENABLE_OBJC_GC = supported;
 				GCC_OPTIMIZATION_LEVEL = 3;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = libavPlayer_Prefix.pch;
