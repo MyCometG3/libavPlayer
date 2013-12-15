@@ -31,6 +31,7 @@
 @private	
 	VideoState *is;
 	CVPixelBufferRef pb;
+    double lastPosition;
 }
 
 - (id) initWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr;

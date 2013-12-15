@@ -26,12 +26,42 @@
 #include "LAVPthread.h"
 #include "stdlib.h"
 #include <assert.h>
+#include <mach/mach_time.h>
+#include <sys/time.h>
 
 void LAVPCondWait(LAVPcond *cond, LAVPmutex *mutex)
 {
 	//assert(cond);
 	
 	pthread_cond_wait(cond, mutex);
+}
+
+void LAVPCondWaitTimeout(LAVPcond *cond, LAVPmutex *mutex, int ms)
+{
+	//assert(cond);
+    
+    if (ms <= 0)
+        ms = 1;
+    
+    struct timeval  now; /* usec = 1/1000000 */
+    struct timespec limit; /* nsec = 1/1000000000 */
+    long dt_sec, dt_nsec;
+    
+    // not strict but enough in msec order
+    dt_sec = (long)ms / 1000L;
+    dt_nsec = (long)ms * 1000000L - dt_sec * 1000000000L;
+    
+    gettimeofday(&now, NULL);
+    limit.tv_sec = now.tv_sec + dt_sec;
+    limit.tv_nsec = now.tv_usec * 1000L + dt_nsec;
+    
+    while (limit.tv_nsec > 1000000000L) {
+        limit.tv_sec ++;
+        limit.tv_nsec -= 1000000000L;
+    }
+    
+    // Do a timed wait
+    pthread_cond_timedwait( cond, mutex, &limit );
 }
 
 void LAVPCondSignal(LAVPcond *cond)

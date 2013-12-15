@@ -32,14 +32,11 @@
 
 /* =========================================================== */
 
-/* maximum audio speed change to get correct sync */
-#define SAMPLE_CORRECTION_PERCENT_MAX 10
-
 /* =========================================================== */
 
-int synchronize_audio(VideoState *is, short *samples,
-					  int samples_size1, double pts);
-int audio_decode_frame(VideoState *is, double *pts_ptr);
+static void update_sample_display(VideoState *is, short *samples, int samples_size);
+static int synchronize_audio(VideoState *is, int nb_samples);
+int audio_decode_frame(VideoState *is);
 
 BOOL audio_isPitchChanged(VideoState *is);
 void audio_updatePitch(VideoState *is);
@@ -48,262 +45,347 @@ void audio_updatePitch(VideoState *is);
 
 #pragma mark -
 
-/* get the current audio clock value */
-double get_audio_clock(VideoState *is)
+int audio_open(void *opaque, int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate, struct AudioParams *audio_hw_params)
 {
-	if (is->paused) {
-		return is->audio_current_pts;
-	} else {
-		return is->audio_current_pts_drift + av_gettime() / 1000000.0;
-	}
+    /* LAVP: TODO Simple 48KHz stereo output by default */
+    if (wanted_sample_rate <= 0) {
+        wanted_sample_rate = 48000;
+    }
+    
+    if (wanted_nb_channels <= 0) {
+        wanted_nb_channels = 2;
+    }
+    
+    if (!wanted_channel_layout || wanted_nb_channels != av_get_channel_layout_nb_channels(wanted_channel_layout)) {
+        wanted_channel_layout = av_get_default_channel_layout(wanted_nb_channels);
+        wanted_channel_layout &= ~AV_CH_LAYOUT_STEREO_DOWNMIX;
+    }
+    
+    audio_hw_params->fmt = AV_SAMPLE_FMT_S16;
+    audio_hw_params->freq = wanted_sample_rate;
+    audio_hw_params->channel_layout = wanted_channel_layout;
+    audio_hw_params->channels =  wanted_nb_channels;
+    return SDL_AUDIO_BUFFER_SIZE * audio_hw_params->channels * av_get_bytes_per_sample(audio_hw_params->fmt);
 }
 
-/* return the new audio buffer size (samples can be added or deleted
- to get better sync if video or external master clock) */
-int synchronize_audio(VideoState *is, short *samples,
-					  int samples_size1, double pts)
+/* copy samples for viewing in editor window */
+static void update_sample_display(VideoState *is, short *samples, int samples_size)
 {
-	int n, samples_size;
-	double ref_clock;
-	
-	n = 2 * is->audio_st->codec->channels;
-	samples_size = samples_size1;
-	
-	/* if not master, then we try to remove or add samples to correct the clock */
-	if (((is->av_sync_type == AV_SYNC_VIDEO_MASTER && is->video_st) ||
-		 is->av_sync_type == AV_SYNC_EXTERNAL_CLOCK)) {
-		double diff, avg_diff;
-		int wanted_size, min_size, max_size, nb_samples;
-		
-		ref_clock = get_master_clock(is);
-		diff = get_audio_clock(is) - ref_clock;
-		
-		if (diff < AV_NOSYNC_THRESHOLD) {
-			is->audio_diff_cum = diff + is->audio_diff_avg_coef * is->audio_diff_cum;
-			if (is->audio_diff_avg_count < AUDIO_DIFF_AVG_NB) {
-				/* not enough measures to have a correct estimate */
-				is->audio_diff_avg_count++;
-			} else {
-				/* estimate the A-V difference */
-				avg_diff = is->audio_diff_cum * (1.0 - is->audio_diff_avg_coef);
-				
-				if (fabs(avg_diff) >= is->audio_diff_threshold) {
-					wanted_size = samples_size + ((int)(diff * is->audio_st->codec->sample_rate) * n);
-					nb_samples = samples_size / n;
-					
-					min_size = ((nb_samples * (100 - SAMPLE_CORRECTION_PERCENT_MAX)) / 100) * n;
-					max_size = ((nb_samples * (100 + SAMPLE_CORRECTION_PERCENT_MAX)) / 100) * n;
-					if (wanted_size < min_size)
-						wanted_size = min_size;
-					else if (wanted_size > max_size)
-						wanted_size = max_size;
-					
-					/* add or remove samples to correction the synchro */
-					if (wanted_size < samples_size) {
-						/* remove samples */
-						samples_size = wanted_size;
-					} else if (wanted_size > samples_size) {
-						uint8_t *samples_end, *q;
-						int nb;
-						
-						/* add samples */
-						nb = (samples_size - wanted_size);
-						samples_end = (uint8_t *)samples + samples_size - n;
-						q = samples_end + n;
-						while (nb > 0) {
-							memcpy(q, samples_end, n);
-							q += n;
-							nb -= n;
-						}
-						samples_size = wanted_size;
-					}
-				}
-				av_dlog(NULL, "diff=%f adiff=%f sample_diff=%d apts=%0.3f vpts=%0.3f %f\n",
-						diff, avg_diff, samples_size - samples_size1,
-						is->audio_clock, is->video_clock, is->audio_diff_threshold);
-			}
-		} else {
-			/* too big difference : may be initial PTS errors, so
-			 reset A-V filter */
-			is->audio_diff_avg_count = 0;
-			is->audio_diff_cum = 0;
-		}
-	}
-	
-	return samples_size;
+    int size, len;
+    
+    size = samples_size / sizeof(short);
+    while (size > 0) {
+        len = SAMPLE_ARRAY_SIZE - is->sample_array_index;
+        if (len > size)
+            len = size;
+        memcpy(is->sample_array + is->sample_array_index, samples, len * sizeof(short));
+        samples += len;
+        is->sample_array_index += len;
+        if (is->sample_array_index >= SAMPLE_ARRAY_SIZE)
+            is->sample_array_index = 0;
+        size -= len;
+    }
 }
 
-/* decode one audio frame and returns its uncompressed size */
-int audio_decode_frame(VideoState *is, double *pts_ptr)
+/* return the wanted number of samples to get better sync if sync_type is video
+ * or external master clock */
+static int synchronize_audio(VideoState *is, int nb_samples)
 {
-	if (!is->audio_st) return -1;
-	if (!is->audio_st->codec) return -1;
-	
-	AVPacket *pkt_temp = &is->audio_pkt_temp;
-	AVPacket *pkt = &is->audio_pkt;
-	AVCodecContext *dec= is->audio_st->codec;
-	int n, len1, data_size;
-	double pts;
-	int new_packet = 0;
-	int flush_complete = 0;
-	
-	for(;;) {
-		/* NOTE: the audio packet can contain several frames */
-		while (pkt_temp->size > 0 || (!pkt_temp->data && new_packet)) {
-			if (flush_complete)
-				break;
-			new_packet = 0;
-			data_size = sizeof(is->audio_buf1);
-			len1 = avcodec_decode_audio3(dec,
-										 (int16_t *)is->audio_buf1, &data_size,
-										 pkt_temp);
-			if (len1 < 0) {
-				/* if error, we skip the frame */
-				pkt_temp->size = 0;
-				break;
-			}
-			
-			pkt_temp->data += len1;
-			pkt_temp->size -= len1;
-			if (data_size <= 0) {
-				/* stop sending empty packets if the decoder is finished */
-				if (!pkt_temp->data && dec->codec->capabilities & CODEC_CAP_DELAY)
-					flush_complete = 1;
-				continue;
-			}
-			
-			if (dec->sample_fmt != is->audio_src_fmt) {
-				if (is->reformat_ctx)
-					av_audio_convert_free(is->reformat_ctx);
-				is->reformat_ctx= av_audio_convert_alloc(AV_SAMPLE_FMT_S16, 1,
-														 dec->sample_fmt, 1, NULL, 0);
-				if (!is->reformat_ctx) {
-					fprintf(stderr, "Cannot convert %s sample format to %s sample format\n",
-							av_get_sample_fmt_name(dec->sample_fmt),
-							av_get_sample_fmt_name(AV_SAMPLE_FMT_S16));
-					break;
-				}
-				is->audio_src_fmt= dec->sample_fmt;
-			}
-			
-			if (is->reformat_ctx) {
-				const void *ibuf[6]= {is->audio_buf1};
-				void *obuf[6]= {is->audio_buf2};
-				int istride[6]= {av_get_bytes_per_sample(dec->sample_fmt)};
-				int ostride[6]= {2};
-				int len= data_size/istride[0];
-				if (av_audio_convert(is->reformat_ctx, obuf, ostride, ibuf, istride, len)<0) {
-					printf("av_audio_convert() failed\n");
-					break;
-				}
-				is->audio_buf= is->audio_buf2;
-				/* FIXME: existing code assume that data_size equals framesize*channels*2
-				 remove this legacy cruft */
-				data_size= len*2;
-			}else{
-				is->audio_buf= is->audio_buf1;
-			}
-			
-			/* if no pts, then compute it */
-			pts = is->audio_clock;
-			*pts_ptr = pts;
-			n = 2 * dec->channels;
-			is->audio_clock += (double)data_size /
-			(double)(n * dec->sample_rate);
-#ifdef DEBUG
-			{
-				static double last_clock;
-				printf("audio: delay=%0.3f clock=%0.3f pts=%0.3f\n",
-					   is->audio_clock - last_clock,
-					   is->audio_clock, pts);
-				last_clock = is->audio_clock;
-			}
+    int wanted_nb_samples = nb_samples;
+    
+    /* if not master, then we try to remove or add samples to correct the clock */
+    if (get_master_sync_type(is) != AV_SYNC_AUDIO_MASTER) {
+        double diff, avg_diff;
+        int min_nb_samples, max_nb_samples;
+        
+        diff = get_clock(&is->audclk) - get_master_clock(is);
+        
+        if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD) {
+            is->audio_diff_cum = diff + is->audio_diff_avg_coef * is->audio_diff_cum;
+            if (is->audio_diff_avg_count < AUDIO_DIFF_AVG_NB) {
+                /* not enough measures to have a correct estimate */
+                is->audio_diff_avg_count++;
+            } else {
+                /* estimate the A-V difference */
+                avg_diff = is->audio_diff_cum * (1.0 - is->audio_diff_avg_coef);
+                
+                if (fabs(avg_diff) >= is->audio_diff_threshold) {
+                    wanted_nb_samples = nb_samples + (int)(diff * is->audio_src.freq);
+                    min_nb_samples = ((nb_samples * (100 - SAMPLE_CORRECTION_PERCENT_MAX) / 100));
+                    max_nb_samples = ((nb_samples * (100 + SAMPLE_CORRECTION_PERCENT_MAX) / 100));
+                    wanted_nb_samples = FFMIN(FFMAX(wanted_nb_samples, min_nb_samples), max_nb_samples);
+                }
+                av_dlog(NULL, "diff=%f adiff=%f sample_diff=%d apts=%0.3f %f\n",
+                        diff, avg_diff, wanted_nb_samples - nb_samples,
+                        is->audio_clock, is->audio_diff_threshold);
+            }
+        } else {
+            /* too big difference : may be initial PTS errors, so
+             reset A-V filter */
+            is->audio_diff_avg_count = 0;
+            is->audio_diff_cum       = 0;
+        }
+    }
+    
+    return wanted_nb_samples;
+}
+
+/**
+ * Decode one audio frame and return its uncompressed size.
+ *
+ * The processed audio frame is decoded, converted if required, and
+ * stored in is->audio_buf, with size in bytes given by the return
+ * value.
+ */
+int audio_decode_frame(VideoState *is)
+{
+    AVPacket *pkt_temp = &is->audio_pkt_temp;
+    AVPacket *pkt = &is->audio_pkt;
+    AVCodecContext *dec = is->audio_st->codec;
+    int len1, data_size, resampled_data_size;
+    int64_t dec_channel_layout;
+    int got_frame;
+    av_unused double audio_clock0;
+    int wanted_nb_samples;
+    AVRational tb = { 0 }; /* LAVP: should be initialized */
+    // LAVP:
+    
+    for(;;) {
+        /* NOTE: the audio packet can contain several frames */
+        while (pkt_temp->stream_index != -1 || is->audio_buf_frames_pending) {
+            if (!is->frame) {
+                if (!(is->frame = av_frame_alloc()))
+                    return AVERROR(ENOMEM);
+            } else {
+                av_frame_unref(is->frame);
+            }
+            
+            if (is->audioq.serial != is->audio_pkt_temp_serial)
+                break;
+            
+            if (is->paused)
+                return -1;
+            
+            if (!is->audio_buf_frames_pending) {
+                len1 = avcodec_decode_audio4(dec, is->frame, &got_frame, pkt_temp);
+                if (len1 < 0) {
+                    /* if error, we skip the frame */
+                    pkt_temp->size = 0;
+                    break;
+                }
+                
+                pkt_temp->dts =
+                pkt_temp->pts = AV_NOPTS_VALUE;
+                pkt_temp->data += len1;
+                pkt_temp->size -= len1;
+                if ((pkt_temp->data && pkt_temp->size <= 0) || (!pkt_temp->data && !got_frame))
+                    pkt_temp->stream_index = -1;
+                if (!pkt_temp->data && !got_frame)
+                    is->audio_finished = is->audio_pkt_temp_serial;
+                
+                if (!got_frame)
+                    continue;
+                
+                tb = (AVRational){1, is->frame->sample_rate};
+                if (is->frame->pts != AV_NOPTS_VALUE)
+                    is->frame->pts = av_rescale_q(is->frame->pts, dec->time_base, tb);
+                else if (is->frame->pkt_pts != AV_NOPTS_VALUE)
+                    is->frame->pts = av_rescale_q(is->frame->pkt_pts, is->audio_st->time_base, tb);
+                else if (is->audio_frame_next_pts != AV_NOPTS_VALUE)
+#if 0
+                    // LAVP:
+#else
+                    is->frame->pts = av_rescale_q(is->audio_frame_next_pts, (AVRational){1, is->audio_src.freq}, tb);
 #endif
-			return data_size;
-		}
-		
-		/* free the current packet */
-		if (pkt->data)
-			av_free_packet(pkt);
-		
-		if (is->paused || is->audioq.abort_request) {
-			return -1;
-		}
-		
-		/* read next packet */
-		if ((new_packet = packet_queue_get(&is->audioq, pkt, 1)) < 0)
-			return -1;
-		
-		if(pkt->data == is->audioq.flush_pkt.data)
-			avcodec_flush_buffers(dec);
-		
-		pkt_temp->data = pkt->data;
-		pkt_temp->size = pkt->size;
-		
-		/* if update the audio clock with the pts */
-		if (pkt->pts != AV_NOPTS_VALUE) {
-			//NSLog(@"GET : pkt->pts = %8lld, size = %8d, pos = %8lld GET___", pkt->pts, pkt->size, pkt->pos);
-			is->audio_clock = av_q2d(is->audio_st->time_base)*pkt->pts;
-		}
-	}
+                if (is->frame->pts != AV_NOPTS_VALUE)
+                    is->audio_frame_next_pts = is->frame->pts + is->frame->nb_samples;
+                
+#if 0
+                // LAVP:
+#endif
+            }
+#if 0
+            // LAVP:
+#endif
+            
+            data_size = av_samples_get_buffer_size(NULL, av_frame_get_channels(is->frame),
+                                                   is->frame->nb_samples,
+                                                   is->frame->format, 1);
+            
+            dec_channel_layout =
+                (is->frame->channel_layout && av_frame_get_channels(is->frame) == av_get_channel_layout_nb_channels(is->frame->channel_layout)) ?
+                is->frame->channel_layout : av_get_default_channel_layout(av_frame_get_channels(is->frame));
+            wanted_nb_samples = synchronize_audio(is, is->frame->nb_samples);
+            
+            if (is->frame->format        != is->audio_src.fmt            ||
+                dec_channel_layout       != is->audio_src.channel_layout ||
+                is->frame->sample_rate   != is->audio_src.freq           ||
+                (wanted_nb_samples       != is->frame->nb_samples && !is->swr_ctx)) {
+                swr_free(&is->swr_ctx);
+                is->swr_ctx = swr_alloc_set_opts(NULL,
+                                                 is->audio_tgt.channel_layout, is->audio_tgt.fmt, is->audio_tgt.freq,
+                                                 dec_channel_layout,           is->frame->format, is->frame->sample_rate,
+                                                 0, NULL);
+                if (!is->swr_ctx || swr_init(is->swr_ctx) < 0) {
+                    av_log(NULL, AV_LOG_ERROR,
+                           "Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!\n",
+                           is->frame->sample_rate, av_get_sample_fmt_name(is->frame->format), av_frame_get_channels(is->frame),
+                           is->audio_tgt.freq, av_get_sample_fmt_name(is->audio_tgt.fmt), is->audio_tgt.channels);
+                    break;
+                }
+                is->audio_src.channel_layout = dec_channel_layout;
+                is->audio_src.channels       = av_frame_get_channels(is->frame);
+                is->audio_src.freq = is->frame->sample_rate;
+                is->audio_src.fmt = is->frame->format;
+            }
+            
+            if (is->swr_ctx) {
+                const uint8_t **in = (const uint8_t **)is->frame->extended_data;
+                uint8_t **out = &is->audio_buf1;
+                int out_count = (int64_t)wanted_nb_samples * is->audio_tgt.freq / is->frame->sample_rate + 256;
+                int out_size  = av_samples_get_buffer_size(NULL, is->audio_tgt.channels, out_count, is->audio_tgt.fmt, 0);
+                int len2;
+                if (out_size < 0) {
+                    av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size() failed\n");
+                    break;
+                }
+                if (wanted_nb_samples != is->frame->nb_samples) {
+                    if (swr_set_compensation(is->swr_ctx, (wanted_nb_samples - is->frame->nb_samples) * is->audio_tgt.freq / is->frame->sample_rate,
+                                             wanted_nb_samples * is->audio_tgt.freq / is->frame->sample_rate) < 0) {
+                        av_log(NULL, AV_LOG_ERROR, "swr_set_compensation() failed\n");
+                        break;
+                    }
+                }
+                av_fast_malloc(&is->audio_buf1, &is->audio_buf1_size, out_size);
+                if (!is->audio_buf1)
+                    return AVERROR(ENOMEM);
+                len2 = swr_convert(is->swr_ctx, out, out_count, in, is->frame->nb_samples);
+                if (len2 < 0) {
+                    av_log(NULL, AV_LOG_ERROR, "swr_convert() failed\n");
+                    break;
+                }
+                if (len2 == out_count) {
+                    av_log(NULL, AV_LOG_WARNING, "audio buffer is probably too small\n");
+                    swr_init(is->swr_ctx);
+                }
+                is->audio_buf = is->audio_buf1;
+                resampled_data_size = len2 * is->audio_tgt.channels * av_get_bytes_per_sample(is->audio_tgt.fmt);
+            } else {
+                is->audio_buf = is->frame->data[0];
+                resampled_data_size = data_size;
+            }
+            
+            audio_clock0 = is->audio_clock;
+            /* update the audio clock with the pts */
+            if (is->frame->pts != AV_NOPTS_VALUE)
+                is->audio_clock = is->frame->pts * av_q2d(tb) + (double) is->frame->nb_samples / is->frame->sample_rate;
+            else
+                is->audio_clock = NAN;
+            is->audio_clock_serial = is->audio_pkt_temp_serial;
+#ifdef DEBUG
+            {
+                static double last_clock;
+                printf("audio: delay=%0.3f clock=%0.3f clock0=%0.3f\n",
+                       is->audio_clock - last_clock,
+                       is->audio_clock, audio_clock0);
+                last_clock = is->audio_clock;
+            }
+#endif
+            return resampled_data_size;
+        }
+        
+        /* free the current packet */
+        if (pkt->data)
+            av_free_packet(pkt);
+        memset(pkt_temp, 0, sizeof(*pkt_temp));
+        pkt_temp->stream_index = -1;
+        
+        if (is->audioq.abort_request) {
+            return -1;
+        }
+        
+        if (is->audioq.nb_packets == 0)
+            LAVPCondSignal(is->continue_read_thread);
+        
+        /* read next packet */
+        if ((packet_queue_get(&is->audioq, pkt, 1, &is->audio_pkt_temp_serial)) < 0)
+            return -1;
+        
+        if (pkt->data == is->audioq.flush_pkt.data) {
+            avcodec_flush_buffers(dec);
+            is->audio_buf_frames_pending = 0;
+            is->audio_frame_next_pts = AV_NOPTS_VALUE;
+            if ((is->ic->iformat->flags & (AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH | AVFMT_NO_BYTE_SEEK)) && !is->ic->iformat->read_seek)
+                is->audio_frame_next_pts = is->audio_st->start_time;
+        }
+        
+        *pkt_temp = *pkt;
+    }
 }
 
+/* prepare a new audio buffer */
+/* LAVP: original: sdl_audio_callback() */
 static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
 {
-	//NSLog(@"inCallbackProc");
-	
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	
-	uint8_t *stream = inBuffer->mAudioData;
-	int len = inBuffer->mAudioDataBytesCapacity;
-	
-	//
-	VideoState *is = inUserData;
-	int audio_size, len1;
-	int bytes_per_sec;
-	double pts;
-	
-	is->audio_callback_time = av_gettime();
-	
-	while (len > 0) {
-		if (is->audio_buf_index >= is->audio_buf_size) {
-			audio_size = audio_decode_frame(is, &pts);
-			if (audio_size < 0) {
-				/* if error, just output silence */
-				is->audio_buf = is->audio_buf1;
-				is->audio_buf_size = 1024;
-				memset(is->audio_buf, 0, is->audio_buf_size);
-			} else {
-				audio_size = synchronize_audio(is, (int16_t *)is->audio_buf, audio_size, pts);
-				is->audio_buf_size = audio_size;
-			}
-			is->audio_buf_index = 0;
-			//NSLog(@"audio_size = %d; audio_buf_size = %d", audio_size, is->audio_buf_size);
-		}
-		len1 = is->audio_buf_size - is->audio_buf_index;
-		if (len1 > len)
-			len1 = len;
-		memcpy(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1);
-		len -= len1;
-		stream += len1;
-		is->audio_buf_index += len1;
-	}
-	is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
-	if (is->audio_st) {
-		bytes_per_sec = is->audio_st->codec->sample_rate * 2 * is->audio_st->codec->channels;
-		is->audio_current_pts = is->audio_clock - (double)(2 * inBuffer->mAudioDataBytesCapacity + is->audio_write_buf_size) / bytes_per_sec;
-	} else {
-		is->audio_current_pts = is->audio_clock;
-	}
-	is->audio_current_pts_drift = is->audio_current_pts - is->audio_callback_time / 1000000.0;
-	
-	//
-	inBuffer->mAudioDataByteSize = stream - (UInt8 *)inBuffer->mAudioData;
-	OSStatus err = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
-	assert(err == 0 || err == kAudioQueueErr_EnqueueDuringReset);
-	
-	[pool drain];
+    @autoreleasepool {
+        // NSLog(@"inCallbackProc");
+        
+        uint8_t *stream = inBuffer->mAudioData;
+        int len = inBuffer->mAudioDataBytesCapacity;
+        
+        //
+        VideoState *is = inUserData;
+        int audio_size, len1;
+        int bytes_per_sec;
+        int frame_size = av_samples_get_buffer_size(NULL, is->audio_tgt.channels, 1, is->audio_tgt.fmt, 1);
+        
+        /* LAVP: check if no channels are available */
+        if (is->audio_tgt.freq == 0 || is->audio_tgt.channels == 0) {
+            printf("is->audio_tgt: freq=%d, channels=%d", is->audio_tgt.freq, is->audio_tgt.channels);
+            exit(1);
+        }
+        
+        is->audio_callback_time = av_gettime();
+        
+        while (len > 0) {
+            if (is->audio_buf_index >= is->audio_buf_size) {
+                audio_size = audio_decode_frame(is);
+                if (audio_size < 0) {
+                    /* if error, just output silence */
+                    is->audio_buf      = is->silence_buf;
+                    is->audio_buf_size = sizeof(is->silence_buf) / frame_size * frame_size;
+                } else {
+                    if (is->show_mode != SHOW_MODE_VIDEO)
+                        update_sample_display(is, (int16_t *)is->audio_buf, audio_size);
+                    is->audio_buf_size = audio_size;
+                }
+                is->audio_buf_index = 0;
+            }
+            len1 = is->audio_buf_size - is->audio_buf_index;
+            if (len1 > len)
+                len1 = len;
+            memcpy(stream, (uint8_t *)is->audio_buf + is->audio_buf_index, len1);
+            len -= len1;
+            stream += len1;
+            is->audio_buf_index += len1;
+        }
+        bytes_per_sec = is->audio_tgt.freq * is->audio_tgt.channels * av_get_bytes_per_sample(is->audio_tgt.fmt);
+        is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
+        
+        /* Let's assume the audio driver that is used by SDL has two periods. */
+        if (!isnan(is->audio_clock)) {
+            set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / bytes_per_sec, is->audio_clock_serial, is->audio_callback_time / 1000000.0);
+            sync_clock_to_slave(&is->extclk, &is->audclk);
+        }
+        
+        /* LAVP: Enqueue LPCM result into Audio Queue */
+        inBuffer->mAudioDataByteSize = stream - (UInt8 *)inBuffer->mAudioData;
+        OSStatus err = AudioQueueEnqueueBuffer(inAQ, inBuffer, 0, NULL);
+        assert(err == 0 || err == kAudioQueueErr_EnqueueDuringReset);
+    }
 }
+
+#pragma mark -
 
 static void LAVPFillASBD(VideoState *is, AVCodecContext *avctx)
 {
@@ -326,8 +408,11 @@ static void LAVPFillASBD(VideoState *is, AVCodecContext *avctx)
 	is->asbd.mBitsPerChannel = inValidBitsPerChannel;
 }
 
+/* LAVP: original: audio_open() */
 void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 {
+    if (is->outAQ) return;
+    
 	//NSLog(@"LAVPAudioQueueInit");
 	
 	if (!avctx->sample_rate) {
@@ -339,39 +424,56 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 		
 		return;
 	}
-	
-	if (!is->outAQ) {
-		//
-		LAVPFillASBD(is, avctx);
-		
-		//
-		OSStatus err = 0;
-		AudioQueueRef outAQ = NULL;
-		is->audioDispatchQueue = dispatch_queue_create("audio", NULL);
+
+    // prepare Audio stream basic description
+    LAVPFillASBD(is, avctx);
+    
+    // prepare AudioQueue for Output
+    OSStatus err = 0;
+    AudioQueueRef outAQ = NULL;
 #if 1
-		void (^inCallbackBlock)(AudioQueueRef, AudioQueueBufferRef) = ^(AudioQueueRef inAQ, AudioQueueBufferRef inBuffer) 
-		{
-			inCallbackProc(is, inAQ, inBuffer);
-		};
-		err = AudioQueueNewOutputWithDispatchQueue(&outAQ, &is->asbd, 0, is->audioDispatchQueue, inCallbackBlock);
+    if (!is->audioDispatchQueue) {
+        // using dispatch queue and block object
+        void (^inCallbackBlock)() = ^(AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
+        {
+            inCallbackProc(is, inAQ, inBuffer);
+        };
+        
+        is->audioDispatchQueue = dispatch_queue_create("audio", DISPATCH_QUEUE_SERIAL);
+        err = AudioQueueNewOutputWithDispatchQueue(&outAQ, &is->asbd, 0, is->audioDispatchQueue, inCallbackBlock);
+    }
 #else
-		err = AudioQueueNewOutput(&is->asbd, inCallbackProc, is, 
-								  0, 0, 
-								  0, &outAQ);
+    // using direct callback
+    err = AudioQueueNewOutput(&is->asbd, inCallbackProc, is, 0, 0, 0, &outAQ);
 #endif
-		is->outAQ = outAQ;
-		assert(err == 0 && outAQ != NULL);
-		
-		//
-		UInt32 inBufferByteSize = (is->asbd.mSampleRate / 50) * is->asbd.mBytesPerFrame;	// perform callback 50 times per sec
-		for( int i = 0; i < 3; i++ ) {
-			AudioQueueBufferRef outBuffer = NULL;
-			err = AudioQueueAllocateBuffer(is->outAQ, inBufferByteSize, &outBuffer);
-			assert(err == 0 && outBuffer != NULL);
-			
-			inCallbackProc(is, is->outAQ, outBuffer);	// AudioQueuePrime does instead
-		}
-	}
+    assert(err == 0 && outAQ != NULL);
+    is->outAQ = outAQ;
+    
+    // Enable timepitch
+    UInt32 propValue = 1;
+    err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_EnableTimePitch, &propValue, sizeof(propValue));
+    assert(err == 0);
+    
+    // Preserve original pitch (using FFT filter)
+    propValue = kAudioQueueTimePitchAlgorithm_Spectral;
+    err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_TimePitchAlgorithm, &propValue, sizeof(propValue));
+    assert(err == 0);
+    
+    // prepare audio queue buffers for Output
+    UInt32 inBufferByteSize = (is->asbd.mSampleRate / 50) * is->asbd.mBytesPerFrame;	// perform callback 50 times per sec
+    for( int i = 0; i < 3; i++ ) {
+        // Allocate Buffer
+        AudioQueueBufferRef outBuffer = NULL;
+        err = AudioQueueAllocateBuffer(is->outAQ, inBufferByteSize, &outBuffer);
+        assert(err == 0 && outBuffer != NULL);
+        
+        // Nullify data
+        memset(outBuffer->mAudioData, 0, outBuffer->mAudioDataBytesCapacity);
+        
+        // Enqueue dummy data to start queuing
+        outBuffer->mAudioDataByteSize=8; // dummy data
+        AudioQueueEnqueueBuffer(is->outAQ, outBuffer, 0, 0);
+    }
 }	
 
 void LAVPAudioQueueStart(VideoState *is)
@@ -383,7 +485,8 @@ void LAVPAudioQueueStart(VideoState *is)
 	// Update playback rate
 	BOOL pitchDiff = audio_isPitchChanged(is);
 	if ( pitchDiff ) {
-		LAVPAudioQueueStop(is);
+		// NOTE: kAudioQueueParam_PlayRate and kAudioQueueProperty_TimePitchBypass
+        // can be modified without LAVPAudioQueueStop(is);
 		audio_updatePitch(is);
 	}
 	pitchDiff = audio_isPitchChanged(is);
@@ -395,10 +498,10 @@ void LAVPAudioQueueStart(VideoState *is)
 	//
 	OSStatus err = 0;
 	UInt32 inNumberOfFramesToPrepare = is->asbd.mSampleRate / 60;	// Prepare for 1/60 sec
+    
 	err = AudioQueuePrime(is->outAQ, inNumberOfFramesToPrepare, 0);
 	assert(err == 0);
 	
-	//
 	err = AudioQueueStart(is->outAQ, NULL);
 	assert(err == 0);
 }
@@ -409,8 +512,10 @@ void LAVPAudioQueuePause(VideoState *is)
 	
 	//NSLog(@"LAVPAudioQueuePause");
 	
+    //
 	OSStatus err = 0;
-	err = AudioQueueFlush(is->outAQ);
+	
+    err = AudioQueueFlush(is->outAQ);
 	assert(err == 0);
 	
 	err = AudioQueuePause(is->outAQ);
@@ -423,17 +528,18 @@ void LAVPAudioQueueStop(VideoState *is)
 	
 	//NSLog(@"LAVPAudioQueueStop");
 	
-	OSStatus err = 0;
-	
 	// Check AudioQueue is running or not
+	OSStatus err = 0;
 	UInt32 currentRunning = 0;
 	UInt32 currentRunningSize = sizeof(currentRunning);
+    
 	err = AudioQueueGetProperty(is->outAQ, kAudioQueueProperty_IsRunning, &currentRunning, &currentRunningSize);
 	assert(err == 0);
 	
 	// Stop AudioQueue
 	if (currentRunning) {
-#if 0
+#if 1
+		// Specifying YES with AudioQueueStop() to wait untill done
 		err = AudioQueueStop(is->outAQ, YES);
 		assert(err == 0);
 #else
@@ -448,6 +554,7 @@ void LAVPAudioQueueStop(VideoState *is)
 			currentRunningSize = sizeof(currentRunning);
 			
 			usleep(10*1000);
+            
 			err = AudioQueueGetProperty(is->outAQ, kAudioQueueProperty_IsRunning, &currentRunning, &currentRunningSize);
 			if (err == 0 && currentRunning == 0) break;
 		}
@@ -457,6 +564,8 @@ void LAVPAudioQueueStop(VideoState *is)
 		}
 #endif
 	}
+    
+	//NSLog(@"LAVPAudioQueueStop done");
 }
 
 void LAVPAudioQueueDealloc(VideoState *is)
@@ -465,23 +574,37 @@ void LAVPAudioQueueDealloc(VideoState *is)
 	
 	//NSLog(@"LAVPAudioQueueDealloc");
 	
+    // stop AudioQueue
 	OSStatus err = 0;
-	err = AudioQueueDispose(is->outAQ, YES);
+    
+    err = AudioQueueReset(is->outAQ);
+    assert(err == 0);
+	
+    err = AudioQueueDispose(is->outAQ, NO);
 	assert(err == 0);
 	
 	is->outAQ = NULL;
 	
-	dispatch_release(is->audioDispatchQueue);
-	is->audioDispatchQueue = NULL;
+    // stop dispatch queue
+    if (is->audioDispatchQueue) {
+        // NOTE: dispatch_queue_t is obj-c object now; ARC should handle it though
+        dispatch_release(is->audioDispatchQueue);
+        is->audioDispatchQueue = NULL;
+    }
+    
+	//NSLog(@"LAVPAudioQueueDealloc done");
 }
 
 AudioQueueParameterValue getVolume(VideoState *is)
 {
 	if (!is->outAQ) return 0.0;
 	
+	OSStatus err = 0;
 	AudioQueueParameterValue volume;
-	OSStatus err = AudioQueueGetParameter(is->outAQ, kAudioQueueParam_Volume, &volume);
+    
+    err = AudioQueueGetParameter(is->outAQ, kAudioQueueParam_Volume, &volume);
 	assert(!err);
+    
 	return volume;
 }
 
@@ -489,7 +612,9 @@ void setVolume(VideoState *is, AudioQueueParameterValue volume)
 {
 	if (!is->outAQ) return;
 	
-	OSStatus err = AudioQueueSetParameter(is->outAQ, kAudioQueueParam_Volume, volume);
+	OSStatus err = 0;
+    
+    err = AudioQueueSetParameter(is->outAQ, kAudioQueueParam_Volume, volume);
 	assert(!err);
 }
 
@@ -521,28 +646,25 @@ void audio_updatePitch(VideoState *is)
 	
 	assert(is->playRate > 0.0);
 	
+    //NSLog(@"is->playRate = %.1f", is->playRate);
+    
 	if (is->playRate == 1.0) {
-		// Set playrate BEFORE disable it
+		// Set playrate
 		err = AudioQueueSetParameter(is->outAQ, kAudioQueueParam_PlayRate, is->playRate);
 		assert(err == 0);
 		
-		// Disable timepitch
-		UInt32 propValue = 0;
-		err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_EnableTimePitch, &propValue, sizeof(propValue));
+		// Bypass TimePitch
+		UInt32 propValue = 1;
+		err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_TimePitchBypass, &propValue, sizeof(propValue));
 		assert(err == 0);
 	} else {
-		// Enable timepitch
-		UInt32 propValue = 1;
-		err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_EnableTimePitch, &propValue, sizeof(propValue));
-		assert(err == 0);
-		
-		// Set playrate AFTER enable it
+		// Set playrate
 		err = AudioQueueSetParameter(is->outAQ, kAudioQueueParam_PlayRate, is->playRate);
 		assert(err == 0);
 		
-		// Preserve original pitch (using FFT filter)
-		propValue = kAudioQueueTimePitchAlgorithm_Spectral;
-		err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_TimePitchAlgorithm, &propValue, sizeof(propValue));
+		// Use TimePitch (using FFT filter)
+		UInt32 propValue = 0;
+		err = AudioQueueSetProperty (is->outAQ, kAudioQueueProperty_TimePitchBypass, &propValue, sizeof(propValue));
 		assert(err == 0);
 	}
 }

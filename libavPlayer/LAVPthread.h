@@ -34,6 +34,7 @@ typedef pthread_mutex_t LAVPmutex;
 LAVPcond* LAVPCreateCond(void);
 void LAVPDestroyCond(LAVPcond *cond);
 void LAVPCondWait(LAVPcond *cond, LAVPmutex *mutex);
+void LAVPCondWaitTimeout(LAVPcond *cond, LAVPmutex *mutex, int ms);
 void LAVPCondSignal(LAVPcond *cond);
 
 LAVPmutex* LAVPCreateMutex(void);

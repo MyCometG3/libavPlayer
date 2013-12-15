@@ -64,13 +64,10 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 									  void* displayLinkContext)
 {
 	CVReturn result = kCVReturnError;
-	
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	
-	result = [(LAVPView*)displayLinkContext drawFrameForTime:outputTime];
-	
-	[pool drain];
-	
+	@autoreleasepool {
+        result = [(__bridge LAVPView *)displayLinkContext drawFrameForTime:outputTime];
+    }
+
 	return result;
 }
 
@@ -91,7 +88,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 {
 	if (!displayLink) {
 		CVDisplayLinkCreateWithActiveCGDisplays(&displayLink);
-		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, self);
+		CVDisplayLinkSetOutputCallback(displayLink, &MyDisplayLinkCallback, (__bridge void *)self);
 	}
 	
 	if (displayLink) {
@@ -139,7 +136,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	// Release stream
 	if (_stream) {
 		[_stream stop];
-		[_stream release];
 		_stream = NULL;
 	}
 	
@@ -152,11 +148,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	
 	if (lock) {
-		[lock release];
 		lock = NULL;
 	}
 	if (image) {
-		[image release];
 		image = NULL;
 	}
 	if (pixelbuffer) {
@@ -164,23 +158,13 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		pixelbuffer = NULL;
 	}
 	if (ciContext) {
-		[ciContext release];
 		ciContext = NULL;
 	}
-}
-
-- (void) finalize
-{
-	[self invalidate:nil];
-	
-	[super finalize];
 }
 
 - (void) dealloc
 {
 	[self invalidate:nil];
-	
-	[super dealloc];
 }
 
 - (id)initWithFrame:(NSRect)frameRect
@@ -200,7 +184,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		0
 	};
 	
-	NSOpenGLPixelFormat *pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs] autorelease];
+	NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
 	
 	if (!pixelFormat) {
 		NSOpenGLPixelFormatAttribute attrs[] =
@@ -214,7 +198,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			0
 		};
 		
-		pixelFormat = [[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs] autorelease];
+		pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
 	}
 	assert(pixelFormat);
 	
@@ -412,11 +396,11 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		// Create CoreImage Context
 		CGLContextObj cglContext = [[self openGLContext] CGLContextObj];
 		CGLPixelFormatObj cglPixelFormat = [[self pixelFormat] CGLPixelFormatObj];
-		ciContext = [[CIContext contextWithCGLContext:cglContext 
+		ciContext = [CIContext contextWithCGLContext:cglContext
 										  pixelFormat:cglPixelFormat 
 										   colorSpace:NULL 
 											  options:NULL
-					  ] retain];
+					  ];
 	}
 }
 
@@ -510,14 +494,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		
 		// Fails (expand single pixel to texture)
 		//[ciContext drawImage:image atPoint:CGPointMake(0, 0) fromRect:[image extent]];
-		//[ciContext drawImage:image inRect:textureRect fromRect:[image extent]];
+		[ciContext drawImage:image inRect:textureRect fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width, height) fromRect:[image extent]];
 		
 		// Works
 		//[ciContext drawImage:image atPoint:CGPointMake(1, 1) fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width-1, height-1) fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(1, 1, width-2, height-2) fromRect:[image extent]];
-		[ciContext drawImage:image inRect:CGRectMake(0.001, 0.001, width, height) fromRect:[image extent]];
+		//[ciContext drawImage:image inRect:CGRectMake(0.001, 0.001, width, height) fromRect:[image extent]];
 		
 #if 0
 		// Debug - checkered pattern
@@ -674,7 +658,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb
 {
 	if (image) {
-		[image release];
 		image = NULL;
 	}
 	if (pixelbuffer) {
@@ -691,7 +674,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	}
 	
 	// Replace current CIImage with new one
-	image = [[CIImage imageWithCVImageBuffer:pixelbuffer] retain];
+	image = [CIImage imageWithCVImageBuffer:pixelbuffer];
 }
 
 - (void) streamDidSeek:(NSNotification *)aNotification
@@ -733,8 +716,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	
 	//
 	[_stream stop];
-	[_stream autorelease];
-	_stream = [newStream retain];
+	_stream = newStream;
 	
 	// Get the size of the image we are going to need throughout
 	if (_stream && [_stream frameSize].width && [_stream frameSize].height)

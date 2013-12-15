@@ -10,7 +10,10 @@
 
 NSString* formatTime(QTTime qttime)
 {
-	SInt32 i = qttime.timeValue / qttime.timeScale;
+	if (!qttime.timeScale) {
+        return @"--:--:--:--";
+    }
+    SInt32 i = qttime.timeValue / qttime.timeScale;
 	SInt32 d = i / (24*60*60);
 	SInt32 h = (i - d * (24*60*60)) / (60*60);
 	SInt32 m = (i - d * (24*60*60) - h * (60*60)) / 60;
@@ -23,6 +26,8 @@ NSString* formatTime(QTTime qttime)
 
 @synthesize viewwindow;
 @synthesize layerwindow;
+@synthesize view;
+@synthesize layerView;
 
 - (void)startTimer
 {
@@ -63,9 +68,9 @@ NSString* formatTime(QTTime qttime)
 	BOOL shiftKey = [NSEvent modifierFlags] & NSShiftKeyMask ? TRUE : FALSE;
 	if (url && !shiftKey) {
 		NSError *error = NULL;
-		NSFileWrapper *file = [[[NSFileWrapper alloc] initWithURL:url 
+		NSFileWrapper *file = [[NSFileWrapper alloc] initWithURL:url
 														 options:NSFileWrapperReadingImmediate 
-														   error:&error] autorelease];
+														   error:&error];
 		if ( file ) {
 			[self loadMovieAtURL:url];
 			return;
@@ -88,12 +93,11 @@ NSString* formatTime(QTTime qttime)
 		if (viewstream) {
 			[viewstream stop];
 			[view setStream:nil];
-			[viewstream release];
 			viewstream = nil;
 		}
 		
 		// LAVPView test
-		viewstream = [[LAVPStream streamWithURL:url error:nil] retain];
+		viewstream = [LAVPStream streamWithURL:url error:nil];
 		
 		[view setExpandToFit:YES];
 		
@@ -107,12 +111,11 @@ NSString* formatTime(QTTime qttime)
 		if (layerstream) {
 			[layerstream stop];
 			[layer setStream:nil];
-			[layerstream release];
 			layerstream = nil;
 		}
 		
 		// LAVPLayer test
-		layerstream =  [[LAVPStream streamWithURL:url error:nil] retain];
+		layerstream =  [LAVPStream streamWithURL:url error:nil];
 		
 		//
 		[layerView setWantsLayer:YES];
@@ -165,7 +168,6 @@ NSString* formatTime(QTTime qttime)
 		NSLog(@"layerwindow closing...");
 		[layerstream stop];
 		[layer setStream:nil];
-		[layerstream release];
 		layerstream = nil;
 		layerwindow = nil;
 		NSLog(@"layerwindow closed.");
@@ -174,7 +176,6 @@ NSString* formatTime(QTTime qttime)
 		NSLog(@"viewwindow closing...");
 		[viewstream stop];
 		[view setStream:nil];
-		[viewstream release];
 		viewstream = nil;
 		viewwindow = nil;
 		NSLog(@"viewwindow closed.");

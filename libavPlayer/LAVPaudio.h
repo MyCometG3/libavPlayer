@@ -29,7 +29,7 @@
 
 #include "LAVPcommon.h"
 
-double get_audio_clock(VideoState *is);
+int audio_open(void *opaque, int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate, struct AudioParams *audio_hw_params);
 
 void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx);
 void LAVPAudioQueueStart(VideoState *is);

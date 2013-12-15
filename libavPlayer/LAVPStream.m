@@ -53,8 +53,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 		//
 		decoder = [[LAVPDecoder alloc] initWithURL:url error:errorPtr];
 		if (!decoder) {
-			[self release];
-			self = nil;
+            return nil;
 		}
 	}
 	
@@ -64,9 +63,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 + (id) streamWithURL:(NSURL *)sourceURL error:(NSError **)errorPtr
 {
 	Class myClass = [self class];
-	self = [[myClass alloc] initWithURL:sourceURL error:errorPtr];
-	
-	return [self autorelease];
+	return [[myClass alloc] initWithURL:sourceURL error:errorPtr];
 }
 
 - (void) invalidate
@@ -76,24 +73,14 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	timer = nil;
 	
 	[decoder invalidate];
-	[decoder release];
 	decoder = nil;
 	
-	[url release];
 	url = nil;
-}
-
-- (void) finalize
-{
-	[self invalidate];
-	
-	[super finalize];
 }
 
 - (void) dealloc
 {
 	[self invalidate];
-	[super dealloc];
 }
 
 #pragma mark -

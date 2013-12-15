@@ -54,23 +54,23 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 									  CGDisplayChangeSummaryFlags flags,
 									  void *userInfo)
 {
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	if (flags & kCGDisplaySetModeFlag) {
-		LAVPLayer *self = userInfo;
-		dispatch_async(dispatch_get_main_queue(), ^{
-			// TODO: Not enough for GPU switching...
-			self.asynchronous = NO;
-			self.asynchronous = YES;
-		} );
+	@autoreleasepool {
+        if (flags & kCGDisplaySetModeFlag) {
+            LAVPLayer *self = (__bridge LAVPLayer *)userInfo;
+            dispatch_async(dispatch_get_main_queue(), ^{
+                // TODO: Not enough for GPU switching...
+                self.asynchronous = NO;
+                self.asynchronous = YES;
+            } );
+        }
     }
-	[pool drain];
 }
 
 - (void)invalidate:(NSNotification*)inNotification
 {
 	//NSLog(@"invalidate:");
 	
-    CGDisplayRemoveReconfigurationCallback(MyDisplayReconfigurationCallBack, self);
+    CGDisplayRemoveReconfigurationCallback(MyDisplayReconfigurationCallBack, (__bridge void *)(self));
 	
 	// Resign observer
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -78,7 +78,6 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 	// Release stream
 	if (_stream) {
 		[_stream stop];
-		[_stream release];
 		_stream = NULL;
 	}
 	
@@ -91,11 +90,9 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 	}
 	
 	if (lock) {
-		[lock release];
 		lock = NULL;
 	}
 	if (image) {
-		[image release];
 		image = NULL;
 	}
 	if (pixelbuffer) {
@@ -103,12 +100,10 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 		pixelbuffer = NULL;
 	}
 	if (ciContext) {
-		[ciContext release];
 		ciContext = NULL;
 	}
 	
 	if (gravities) {
-		[gravities release];
 		gravities = NULL;
 	}
 	if (_cglContext) {
@@ -121,18 +116,9 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 	}
 }
 
-- (void) finalize
-{
-	[self invalidate:nil];
-	
-	[super finalize];
-}
-
 - (void) dealloc
 {
 	[self invalidate:nil];
-	
-	[super dealloc];
 }
 
 - (id) init
@@ -141,7 +127,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 	
 	if (self) {
 		// kCAGravity support
-		gravities = [[NSArray arrayWithObjects:
+		gravities = [NSArray arrayWithObjects:
 					  kCAGravityCenter,				//0
 					  kCAGravityTop,				//1
 					  kCAGravityBottom,				//2
@@ -154,7 +140,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 					  kCAGravityResize,				//9
 					  kCAGravityResizeAspect, 		//10
 					  kCAGravityResizeAspectFill,	//11
-					  nil] retain];
+					  nil];
 		
 		// FBO Support
 		GLint numPixelFormats = 0;
@@ -228,7 +214,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 		
 		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(redrawRequest:) name:NSWorkspaceDidWakeNotification object:nil];
 		
-		CGDisplayRegisterReconfigurationCallback(MyDisplayReconfigurationCallBack, self);
+		CGDisplayRegisterReconfigurationCallback(MyDisplayReconfigurationCallBack, (__bridge void *)(self));
 	}
 	
 	return self;
@@ -402,11 +388,11 @@ bail:
 {
 	if (!ciContext) {
 		// Create CoreImage Context
-		ciContext = [[CIContext contextWithCGLContext:_cglContext 
+		ciContext = [CIContext contextWithCGLContext:_cglContext
 										  pixelFormat:_cglPixelFormat 
 										   colorSpace:NULL 
 											  options:NULL
-					  ] retain];
+					  ];
 	}
 }
 
@@ -500,14 +486,14 @@ bail:
 		
 		// Fails (expand single pixel to texture)
 		//[ciContext drawImage:image atPoint:CGPointMake(0, 0) fromRect:[image extent]];
-		//[ciContext drawImage:image inRect:textureRect fromRect:[image extent]];
+		[ciContext drawImage:image inRect:textureRect fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width, height) fromRect:[image extent]];
 		
 		// Works
 		//[ciContext drawImage:image atPoint:CGPointMake(1, 1) fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(0, 0, width-1, height-1) fromRect:[image extent]];
 		//[ciContext drawImage:image inRect:CGRectMake(1, 1, width-2, height-2) fromRect:[image extent]];
-		[ciContext drawImage:image inRect:CGRectMake(0.001, 0.001, width, height) fromRect:[image extent]];
+		//[ciContext drawImage:image inRect:CGRectMake(0.001, 0.001, width, height) fromRect:[image extent]];
 		
 #if 0
 		// Debug - checkered pattern
@@ -736,7 +722,6 @@ bail:
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb
 {
 	if (image) {
-		[image release];
 		image = NULL;
 	}
 	if (pixelbuffer) {
@@ -753,7 +738,7 @@ bail:
 	}
 	
 	// Replace current CIImage with new one
-	image = [[CIImage imageWithCVImageBuffer:pixelbuffer] retain];
+	image = [CIImage imageWithCVImageBuffer:pixelbuffer];
 }
 
 - (void) streamDidSeek:(NSNotification *)aNotification
@@ -795,8 +780,7 @@ bail:
 	
 	//
 	[_stream stop];
-	[_stream autorelease];
-	_stream = [newStream retain];
+	_stream = newStream;
 	
 	// Get the size of the image we are going to need throughout
 	if (_stream && [_stream frameSize].width && [_stream frameSize].height)

@@ -26,12 +26,13 @@
 #import "LAVPDecoder.h"
 
 extern double get_master_clock(VideoState *is);
+extern double get_clock(Clock *c);
 extern void stream_seek(VideoState *is, int64_t pos, int64_t rel, int seek_by_bytes);
 extern void stream_pause(VideoState *is);
 extern void stream_close(VideoState *is);
 extern VideoState* stream_open(id opaque, NSURL *sourceURL);
 extern void alloc_picture(void *opaque);
-extern void video_refresh_timer(void *opaque);
+extern void refresh_loop_wait_event(VideoState *is);
 extern int hasImage(void *opaque, double_t targetpts);
 extern int copyImage(void *opaque, double_t *targetpts, uint8_t* data, const int pitch) ;
 extern int hasImageCurrent(void *opaque);
@@ -60,19 +61,20 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		if (is) {
 			[NSThread detachNewThreadSelector:@selector(threadMain) toTarget:self withObject:nil];
 			
-			int retry = 150;	// 1.5 sec max
+            int msec = 10;
+			int retry = 1500/msec;	// 1.5 sec max
 			while(retry--) {
-				usleep(10*1000);
+				usleep(msec*1000);
 				
-				if (is->pictq_size) break;
+                if (!isnan(get_master_clock(is)) && is->pictq_size)
+                    break;
 			}
 			if (retry < 0) 
 				NSLog(@"ERROR: stream_open timeout detected.");
 			stream_pause(is);
 		} else {
-			[self release];
-			self = nil;
-		}
+            return nil;
+        }
 	}
 	
 	return self;
@@ -83,12 +85,10 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	// perform clean up
 	if (is && is->decoderThread) {
 		NSThread *dt = is->decoderThread;
-		[dt retain];
 		[dt cancel];
 		while (![dt isFinished]) {
 			usleep(10*1000);
 		}
-		[dt release];
 		dt = NULL;
 		
 		stream_close(is);
@@ -100,50 +100,38 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	}
 }
 
-- (void) finalize
-{
-	[self invalidate];
-	
-	[super finalize];
-}
-
 - (void) dealloc
 {
 	[self invalidate];
-	[super dealloc];
 }
 
 - (void) threadMain
 {
-	NSAutoreleasePool *pool = [NSAutoreleasePool new];
-	
-	// Prepare thread runloop
-	NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
-	
-	is->decoderThread = [NSThread currentThread];
-	
-	NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/120 
-													  target:self 
-													selector:@selector(refreshPicture) 
-													userInfo:nil 
-													 repeats:YES];
-	[runLoop addTimer:timer forMode:NSRunLoopCommonModes];
-	
-	// 
-	NSThread *dt = [NSThread currentThread];
-	while ( ![dt isCancelled] ) {
-		NSAutoreleasePool *p = [NSAutoreleasePool new];
-		
-		//NSLog(@"pos = %04.3f (sec)", [self position]/1.0e6);
-		
-		[runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
-		
-		[p drain];
-	}
-	
-	[timer invalidate];
-	
-	[pool drain];
+    @autoreleasepool {
+        // Prepare thread runloop
+        NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
+        
+        is->decoderThread = [NSThread currentThread];
+        
+        NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/120
+                                                          target:self
+                                                        selector:@selector(refreshPicture)
+                                                        userInfo:nil
+                                                         repeats:YES];
+        [runLoop addTimer:timer forMode:NSRunLoopCommonModes];
+        
+        //
+        NSThread *dt = [NSThread currentThread];
+        while ( ![dt isCancelled] ) {
+            @autoreleasepool {
+                //NSLog(@"pos = %04.3f (sec)", [self position]/1.0e6);
+                
+                [runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
+            }
+        }
+        
+        [timer invalidate];
+    }
 }
 
 - (void) allocPicture
@@ -153,7 +141,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 
 - (void) refreshPicture
 {
-	video_refresh_timer(is);
+    refresh_loop_wait_event(is);
 }
 
 - (CVPixelBufferRef) createDummyCVPixelBufferWithSize:(NSSize)size {
@@ -290,11 +278,15 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	}
 	
 	if (rate > 0) {
+        if ([self eof]) {
+            [self setPosition:0.0 blocking:TRUE];
+        }
 		stream_setPlayRate(is, rate);
 		if (is && is->paused) {
 			stream_pause(is);
 		}
 	} else {
+		stream_setPlayRate(is, 1.0);
 		if (is && !is->paused) {
 			stream_pause(is);
 		}
@@ -318,7 +310,11 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	// avutil.h defines timebase for AVFormatContext - in usec.
 	
 	if (is && is->ic) {
-		return get_master_clock(is) * 1e6;
+        double pos = get_master_clock(is) * 1e6;
+        if (!isnan(pos)) {
+            lastPosition = pos;
+        }
+        return lastPosition;
 	}
 	return 0;
 }
@@ -329,58 +325,132 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 	// avutil.h defines timebase for AVFormatContext - in usec.
 	
 	if (is && is->ic) {
-		int64_t ts = FFMIN(is->ic->duration , FFMAX(0, pos));
-		
-		if (is->ic->start_time != AV_NOPTS_VALUE)
-			ts += is->ic->start_time;
-		
-		stream_seek(is, ts, 0, 0);
-		
-		{
-			// Wait till avformat_seek_file() is completed
-			int count = 0, limit = 100;
-			for (; limit > count; count++) {
-				usleep(10*1000);
-				if (!is->seek_req) break;
-			}
-		}
-		{
-			// seek wait - blocking
-			double_t rate = [self rate];
-			if (!rate) [self setRate:8.0];
-			if (blocking) {
-				// wait till time error is less than allowed drift
-				double_t diff = get_master_clock(is) - ts/1.0e6;
-				double_t prev = is->ic->duration;
-				double_t drift = (rate == 0.0) ? 1.0/25 : 1.0/2;
-				int count = 0, limit = (rate == 0.0) ? 300 : 100;
-				
-				//NSLog(@"diff = %.3f", diff);
-				for	(;limit>count;count++) {
-					diff = get_master_clock(is) - ts/1.0e6;
-					if (fabs(diff) < 1.0) {
-						if ( (diff < 0 && -diff < drift) || (diff >= 0 && diff > prev) ) 
-							break;
-					}
-					prev = diff;
-					
-					if (is->paused) break;
-					
-					usleep(10*1000);
-				}
-				//NSLog(@"diff = %.3f %d %@", diff, count, ((limit > count) ? @"" : @"timeout"));
-				
-				if (limit == count) {
-					NSLog(@"ERROR:%@: Seek timeout (offset = %.3f sec)", [self class], diff);
-				}
-			} else {
-				usleep(50*1000);	// give some time to prepare new image
-			}
-			[self setRate:0.0];
-		}
-		
-		return ts;
-	}
+        double_t (^now_s)() = ^(void) {
+            double_t now_s = get_master_clock(is); // in sec
+            //now_s =  isnan(now_s) ? get_clock(&is->vidclk) : now_s; // in sec
+            return now_s;
+        };
+        
+        if (is->seek_by_bytes || is->ic->duration <= 0) {
+            double_t frac = (double_t)pos / (now_s() * 1.0e6);
+            
+            int64_t size =  avio_size(is->ic->pb);
+            
+            int64_t current_b = 0, target_b = 0; // in byte
+            if (is->video_stream >= 0 && is->video_current_pos >= 0) {
+                current_b = is->video_current_pos;
+            } else if (is->audio_stream >= 0 && is->audio_pkt.pos >= 0) {
+                current_b = is->audio_pkt.pos;
+            } else
+                current_b = avio_tell(is->ic->pb);
+            
+            target_b = FFMIN(size, current_b * frac); // in byte
+            stream_seek(is, target_b, 0, 1);
+            
+            {
+                int count = 0, limit = 100, unit = 10;
+
+                // Wait till avformat_seek_file() is completed
+                for (; limit > count; count++) {
+                    if (!is->seek_req) break;
+                    usleep(unit*1000);
+                }
+                
+                // wait till is->paused == true
+                for	(;limit>count;count++) {
+                    if (is->paused) break;
+                    usleep(unit*1000);
+                }
+            }
+        } else {
+            int64_t ts = FFMIN(is->ic->duration , FFMAX(0, pos));
+            
+            if (is->ic->start_time != AV_NOPTS_VALUE)
+                ts += is->ic->start_time;
+            
+            stream_seek(is, ts, -10, 0);
+            
+            {
+                int count = 0, limit = 100, unit = 10;
+                
+                // Wait till avformat_seek_file() is completed
+                for (; limit > count; count++) {
+                    if (!is->seek_req) break;
+                    usleep(unit*1000);
+                }
+                
+                // wait till is->paused == true
+                for	(;limit>count;count++) {
+                    if (is->paused) break;
+                    usleep(unit*1000);
+                }
+#if 1
+                if (count >= limit)
+                {
+                    int64_t diff = (now_s() * 1.0e6) - ts; // in usec
+                    NSLog(@"diff1 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
+                          count, ((limit > count) ? @"" : @"timeout")); // in sec
+                }
+#endif
+            }
+            
+            // seek wait - blocking
+            double_t posNow = now_s(); // in sec
+            if (isnan(posNow) || (!isnan(posNow) && posNow * 1.0e6 < pos))
+            {
+                /* TODO seems to be NAN always while in pause. Why? */
+                //NSLog(@"%@", isnan(posNow) ? @"NAN" : @"-");
+                
+                if (!blocking) {
+#if 0
+                    double_t accelarate = 1.0;
+                    [self setRate:accelarate];
+                    
+                    int count = 0, limit = 5, unit = 10;
+                    for (;count<limit;count++) {
+                        double_t posNow = now_s(); // in sec
+                        if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
+                            lastPosition = posNow*1.0e6; // in usec
+                            break;
+                        }
+                        usleep(unit*1000);
+                    }
+                    
+                    [self setRate:0.0];
+#endif
+                } else {
+                    double_t accelarate = 5.0;
+                    [self setRate:accelarate];
+                    
+                    int count = 0, limit = 150, unit = 10;
+                    for (;count<limit;count++) {
+                        double_t posNow = now_s(); // in sec
+                        if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
+                            lastPosition = posNow*1.0e6; // in usec
+                            break;
+                        }
+                        usleep(unit*1000);
+                    }
+#if 1
+                    if (count >= limit)
+                    {
+                        double_t diff = (now_s() * 1.0e6) - ts; // in usec
+                        NSLog(@"diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
+                              count, ((limit > count) ? @"" : @"timeout")); // in sec
+                    }
+#endif
+                    [self setRate:0.0];
+                }
+            }
+        }
+        
+        // Workaround - Not strict
+        double_t posFinal = now_s(); // in sec
+        //NSLog(@"pos=%.3f, lastPosition=%.3f", posFinal/1.0e6, lastPosition/1.0e6); // in sec
+        lastPosition = isnan(posFinal) ? pos : posFinal*1.0e6; // in usec
+        
+		return lastPosition;
+    }
 	return 0;
 }
 
@@ -403,7 +473,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 
 - (BOOL) eof
 {
-	return (is->eof ? YES : NO);
+	return (is->eof_flag ? YES : NO);
 }
 
 @end

@@ -29,13 +29,11 @@
 
 #include "LAVPcommon.h"
 
-int video_open(VideoState *is);
+int video_open(VideoState *is, VideoPicture *vp);
+
 double get_video_clock(VideoState *is);
-void video_refresh_timer(void *opaque);
+void refresh_loop_wait_event(VideoState *is);
 void alloc_picture(void *opaque);
 int video_thread(void *arg);
-
-void init_pts_correction(PtsCorrectionContext *ctx);
-int64_t guess_correct_pts(PtsCorrectionContext *ctx, int64_t pts, int64_t dts);
 
 #endif

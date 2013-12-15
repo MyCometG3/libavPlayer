@@ -9,14 +9,10 @@
 #import <Cocoa/Cocoa.h>
 
 @interface LAVPTestAppDelegate : NSObject <NSApplicationDelegate> {
-	IBOutlet NSWindow *viewwindow;
-	IBOutlet LAVPView *view;
 	LAVPStream *viewstream;
 	double_t viewPos;
 	NSString *viewTitle;
 	
-	IBOutlet NSWindow *layerwindow;
-	IBOutlet NSView *layerView;
 	LAVPLayer *layer;
 	LAVPStream *layerstream;
 	double_t layerPos;
@@ -28,8 +24,10 @@
 	double_t viewPrev;
 }
 
-@property (assign) IBOutlet NSWindow *viewwindow;
-@property (assign) IBOutlet NSWindow *layerwindow;
+@property (unsafe_unretained) IBOutlet NSWindow *viewwindow;
+@property (unsafe_unretained) IBOutlet LAVPView *view;
+@property (unsafe_unretained) IBOutlet NSWindow *layerwindow;
+@property (unsafe_unretained) IBOutlet NSView *layerView;
 
 - (void) loadMovieAtURL:(NSURL *)url;
 
