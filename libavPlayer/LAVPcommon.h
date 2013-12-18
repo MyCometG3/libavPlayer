@@ -92,11 +92,6 @@
 
 /* =========================================================== */
 
-#define FF_ALLOC_EVENT   (SDL_USEREVENT)
-#define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
-
-/* =========================================================== */
-
 #define ALPHA_BLEND(a, oldp, newp, s)\
 ((((oldp << s) * (255 - (a))) + (newp * (a))) / (255 << s))
 
@@ -124,14 +119,6 @@ v = val & 0xff;\
 }
 
 #define BPP 1
-
-/* =========================================================== */
-
-#define MAX_QUEUE_SIZE (15 * 1024 * 1024)
-#define MIN_FRAMES 5 /*5*/
-
-#define AUDIO_FRAME_SIZE 1024
-#define MIN_AUDIOQ_SIZE (20 * 16 * 1024)
 
 /* =========================================================== */
 
