@@ -9,8 +9,8 @@ This is Free software under GPL V2.
 //
 
 How to build:
-* Setup git and yasm 1.1.x environment. The macports is easy solution.
-* NOTICE: This build requires SnowLeopard+Xcode 4.0, Lion+Xcode4.1 or later.
+* Setup git and yasm 1.2.x environment. The Macports is easy solution.
+* NOTICE: This build requires Mavericks+Xcode 5.0 or later.
 
 * Get latest ffmpeg from ffmpeg project.
   $ git clone git://git.videolan.org/ffmpeg.git
