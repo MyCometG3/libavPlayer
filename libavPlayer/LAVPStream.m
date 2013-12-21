@@ -98,9 +98,9 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (BOOL) readyForTime:(const CVTimeStamp*)ts
 {
-	int64_t	duration = [decoder duration];
-	uint64_t htDiff = ts->hostTime - _htOffset;
-	double_t position = (double_t)htDiff / CVGetHostClockFrequency() + _posOffset * duration;
+    double_t offset = ((double)ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
+	double_t position = [decoder position]/AV_TIME_BASE + offset; // in sec
+	double_t duration = [decoder duration]/AV_TIME_BASE; // in sec
 	
 	// clipping
 	position = (position < 0 ? 0 : position);
@@ -119,9 +119,9 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 {
-	int64_t	duration = [decoder duration];
-	uint64_t htDiff = ts->hostTime - _htOffset;
-	double_t position = (double_t)htDiff / CVGetHostClockFrequency() + _posOffset * duration;
+    double_t offset = ((double)ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
+	double_t position = [decoder position]/AV_TIME_BASE + offset; // in sec
+	double_t duration = [decoder duration]/AV_TIME_BASE; // in sec
 	
 	// clipping
 	position = (position < 0 ? 0 : position);
@@ -233,9 +233,6 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	if (newRate != 0.0) {
 		[decoder setRate:newRate];
 		
-		// current host time
-		_htOffset = CVGetCurrentHostTime();
-		
 		// setup EndOfMovie Checker
 		timer = [NSTimer scheduledTimerWithTimeInterval:0.1
 												 target:self 
@@ -243,6 +240,10 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 											   userInfo:nil 
 												repeats:YES];
 	}
+	
+    // current host time
+    _htOffset = CVGetCurrentHostTime();
+    _posOffset = [decoder position] / [decoder duration];
 }
 
 - (void)checkEndOfMovie

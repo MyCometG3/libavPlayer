@@ -653,38 +653,33 @@ int hasImage(void *opaque, double_t targetpts)
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
 		
-		if (!vp) {
-			for (int index = 0; index < is->pictq_size; index++) {
-				tmp = &is->pictq[index];
-				
-				if (0.0 <= tmp->pts && tmp->pts <= targetpts) {
-					if (!vp) {
-						vp = tmp;
-					} else if (tmp->pts > vp->pts) {
-						vp = tmp;
-					}
-				}
-			}
-		}
-		if (!vp) {
-			for (int index = 0; index < is->pictq_size; index++) {
-				tmp = &is->pictq[index];
-				
-				if (!vp) {
-					vp = tmp;
-				} else if (tmp->pts < vp->pts) {
-					vp = tmp;
-				}
-			}
-		}
+        /*
+         FIXME: for normal operation, first pict in the pictq should have earlier time stamp
+         before currrent time stamp. It is NOT for now.
+         */
+        for (int offset = 0; offset < is->pictq_size; offset++) {
+            int index = (is->pictq_rindex + offset) % VIDEO_PICTURE_QUEUE_SIZE;
+            tmp = &is->pictq[index];
+            
+            if (0.0 <= tmp->pts && tmp->pts <= targetpts) {
+                if (!vp) {
+                    vp = tmp;
+                } else if (vp->pts < tmp->pts) {
+                    vp = tmp;
+                }
+            }
+        }
+        if (!vp) {
+            // Workaround: When all pictures in pictq are later time stamp then targetpts
+            vp = &is->pictq[is->pictq_rindex];
+            //NSLog(@"target:%.3f, vp->pts:%.3f, pts_diff:%.3f", targetpts, vp->pts, vp->pts - targetpts);
+        }
 		
 		if (vp) {
 			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
 			
 			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
-		} else {
-			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
 		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
@@ -720,30 +715,27 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
 		
-		if (!vp) {
-			for (int index = 0; index < is->pictq_size; index++) {
-				tmp = &is->pictq[index];
-				
-				if (0.0 <= tmp->pts && tmp->pts <= *targetpts) {
-					if (!vp) {
-						vp = tmp;
-					} else if (tmp->pts > vp->pts) {
-						vp = tmp;
-					}
-				}
-			}
-		}
-		if (!vp) {
-			for (int index = 0; index < is->pictq_size; index++) {
-				tmp = &is->pictq[index];
-				
-				if (!vp) {
-					vp = tmp;
-				} else if (tmp->pts < vp->pts) {
-					vp = tmp;
-				}
-			}
-		}
+        /*
+         FIXME: for normal operation, first pict in the pictq should have earlier time stamp
+         before currrent time stamp. It is NOT for now.
+         */
+        for (int offset = 0; offset < is->pictq_size; offset++) {
+            int index = (is->pictq_rindex + offset) % VIDEO_PICTURE_QUEUE_SIZE;
+            tmp = &is->pictq[index];
+            
+            if (0.0 <= tmp->pts && tmp->pts <= *targetpts) {
+                if (!vp) {
+                    vp = tmp;
+                } else if (vp->pts < tmp->pts) {
+                    vp = tmp;
+                }
+            }
+        }
+        if (!vp) {
+            // Workaround: When all pictures in pictq are later time stamp then targetpts
+            vp = &is->pictq[is->pictq_rindex];
+            //NSLog(@"target:%.3f, vp->pts:%.3f, pts_diff:%.3f", *targetpts, vp->pts, vp->pts - *targetpts);
+        }
 		
 		if (vp) {
 			int result = 0;
@@ -779,8 +771,6 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
 			} else {
 				NSLog(@"ERROR: result != 0 (%s)", __FUNCTION__);
 			}
-		} else {
-			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
 		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
