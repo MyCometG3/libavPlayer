@@ -3,6 +3,8 @@ libavPlayer.framework is MacOS X framework for media playback using libav*.
 - CAOpenGLLayer subclass
 Derived from ffplay.c in ffmpeg project.
 
+This framework is ARC-ready. Requires OS X 10.8 or later.
+
 This is Free software under GPL V2. 
 (Not LGPL V2.1 because it contains my GPL based 422-420 converter code.)
 
