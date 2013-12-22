@@ -339,12 +339,6 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
         int bytes_per_sec;
         int frame_size = av_samples_get_buffer_size(NULL, is->audio_tgt.channels, 1, is->audio_tgt.fmt, 1);
         
-        /* LAVP: check if no channels are available */
-        if (is->audio_tgt.freq == 0 || is->audio_tgt.channels == 0) {
-            printf("is->audio_tgt: freq=%d, channels=%d", is->audio_tgt.freq, is->audio_tgt.channels);
-            exit(1);
-        }
-        
         is->audio_callback_time = av_gettime();
         
         while (len > 0) {
@@ -436,6 +430,9 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
         // using dispatch queue and block object
         void (^inCallbackBlock)() = ^(AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
         {
+            /* AudioQueue Callback should be ignored when closing */
+            if (is->abort_request) return;
+            
             inCallbackProc(is, inAQ, inBuffer);
         };
         
