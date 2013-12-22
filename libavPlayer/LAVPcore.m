@@ -250,10 +250,13 @@ int stream_component_open(VideoState *is, int stream_index)
             packet_queue_start(&is->videoq);
 			
             // LAVP: Using dispatch queue
-			is->video_queue = dispatch_queue_create("video", NULL);
-			is->video_group = dispatch_group_create();
-			dispatch_group_async(is->video_group, is->video_queue, ^(void){video_thread(is);});
-            
+            {
+                dispatch_queue_t video_queue = dispatch_queue_create("video", NULL);
+                dispatch_group_t video_group = dispatch_group_create();
+                is->video_queue = (__bridge_retained void*)video_queue;
+                is->video_group = (__bridge_retained void*)video_group;
+            }
+            dispatch_group_async((__bridge dispatch_group_t)is->video_group, (__bridge dispatch_queue_t)is->video_queue, ^(void){video_thread(is);});
             is->queue_attachments_req = 1;
 			break;
 		case AVMEDIA_TYPE_SUBTITLE:
@@ -263,9 +266,13 @@ int stream_component_open(VideoState *is, int stream_index)
             packet_queue_start(&is->subtitleq);
 			
             // LAVP: Using dispatch queue
-			is->subtitle_queue = dispatch_queue_create("subtitle", NULL);
-			is->subtitle_group = dispatch_group_create();
-			dispatch_group_async(is->subtitle_group, is->subtitle_queue, ^(void){subtitle_thread(is);});
+            {
+                dispatch_queue_t subtitle_queue = dispatch_queue_create("subtitle", NULL);
+                dispatch_group_t subtitle_group = dispatch_group_create();
+                is->subtitle_queue = (__bridge_retained void*)subtitle_queue;
+                is->subtitle_group = (__bridge_retained void*)subtitle_group;
+            }
+			dispatch_group_async((__bridge dispatch_group_t)is->subtitle_group, (__bridge dispatch_queue_t)is->subtitle_queue, ^(void){subtitle_thread(is);});
 			break;
 		default:
 			break;
@@ -323,11 +330,15 @@ void stream_component_close(VideoState *is, int stream_index)
 			LAVPUnlockMutex(is->pictq_mutex);
 			
             // LAVP: release dispatch queue
-			dispatch_group_wait(is->video_group, DISPATCH_TIME_FOREVER);
-            // TODO...ARC?
-			dispatch_release(is->video_group);
-			dispatch_release(is->video_queue);
-			
+			dispatch_group_wait((__bridge dispatch_group_t)is->video_group, DISPATCH_TIME_FOREVER);
+            {
+                dispatch_group_t video_group = (__bridge_transfer dispatch_group_t)is->video_group;
+                dispatch_queue_t video_queue = (__bridge_transfer dispatch_queue_t)is->video_queue;
+                video_group = NULL; // ARC
+                video_queue = NULL; // ARC
+                is->video_group = NULL;
+                is->video_queue = NULL;
+            }
 			packet_queue_flush(&is->videoq);
 			break;
 		case AVMEDIA_TYPE_SUBTITLE:
@@ -340,11 +351,15 @@ void stream_component_close(VideoState *is, int stream_index)
 			LAVPUnlockMutex(is->subpq_mutex);
 			
             // LAVP: release dispatch queue
-			dispatch_group_wait(is->subtitle_group, DISPATCH_TIME_FOREVER);
-            // TODO...ARC?
-			dispatch_release(is->subtitle_group);
-			dispatch_release(is->subtitle_queue);
-			
+			dispatch_group_wait((__bridge dispatch_group_t)is->subtitle_group, DISPATCH_TIME_FOREVER);
+            {
+                dispatch_group_t subtitle_group = (__bridge_transfer dispatch_group_t)is->subtitle_group;
+                dispatch_queue_t subtitle_queue = (__bridge_transfer dispatch_queue_t)is->subtitle_queue;
+                subtitle_group = NULL; // ARC
+                subtitle_queue = NULL; // ARC
+                is->subtitle_group = NULL;
+                is->subtitle_queue = NULL;
+            }
 			packet_queue_flush(&is->subtitleq);
 			break;
 		default:
@@ -832,10 +847,15 @@ void stream_close(VideoState *is)
 		/* XXX: use a special url_shutdown call to abort parse cleanly */
 		is->abort_request = 1;
         
-		dispatch_group_wait(is->parse_group, DISPATCH_TIME_FOREVER);
-		dispatch_release(is->parse_group);
-		dispatch_release(is->parse_queue);
-		
+		dispatch_group_wait((__bridge dispatch_group_t)is->parse_group, DISPATCH_TIME_FOREVER);
+        {
+            dispatch_group_t parse_group = (__bridge_transfer dispatch_group_t)is->parse_group;
+            dispatch_queue_t parse_queue = (__bridge_transfer dispatch_queue_t)is->parse_queue;
+            parse_group = NULL; // ARC
+            parse_queue = NULL; // ARC
+            is->parse_group = NULL;
+            is->parse_queue = NULL;
+        }
         //
         packet_queue_destroy(&is->videoq);
         packet_queue_destroy(&is->audioq);
@@ -862,6 +882,12 @@ void stream_close(VideoState *is)
         if (is->ic) {
             avformat_close_input(&is->ic);
             is->ic = NULL;
+        }
+        
+        {
+            id decoder = (__bridge_transfer id)is->decoder;
+            decoder = NULL; // ARC
+            is->decoder = NULL;
         }
     }
     
@@ -896,7 +922,7 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
     
     /* ======================================== */
 	
-	is->decoder = opaque;	// (LAVPDecoder *)
+	is->decoder = (__bridge_retained void*)opaque;	// (LAVPDecoder *)
 	is->lastPTScopied = -1;
     	
     is->sws_flags = SWS_BICUBIC;
@@ -1062,9 +1088,13 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
         is->av_sync_type = AV_SYNC_AUDIO_MASTER; // LAVP: fixed value
 
         // LAVP: Using dispatch queue
-        is->parse_queue = dispatch_queue_create("parse", NULL);
-        is->parse_group = dispatch_group_create();
-        dispatch_group_async(is->parse_group, is->parse_queue, ^(void){read_thread(is);});
+        {
+            dispatch_queue_t parse_queue = dispatch_queue_create("parse", NULL);
+            dispatch_group_t parse_group = dispatch_group_create();
+            is->parse_queue = (__bridge_retained void*)parse_queue;
+            is->parse_group = (__bridge_retained void*)parse_group;
+        }
+        dispatch_group_async((__bridge dispatch_group_t)is->parse_group, (__bridge dispatch_queue_t)is->parse_queue, ^(void){read_thread(is);});
     }
 	return is;
 	

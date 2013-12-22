@@ -242,7 +242,7 @@
 				GCC_PREFIX_HEADER = LAVPTest_Prefix.pch;
 				INFOPLIST_FILE = "LAVPTest-Info.plist";
 				INSTALL_PATH = /Applications;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = LAVPTest;
 			};
 			name = Debug;
@@ -262,7 +262,7 @@
 				GCC_PREFIX_HEADER = LAVPTest_Prefix.pch;
 				INFOPLIST_FILE = "LAVPTest-Info.plist";
 				INSTALL_PATH = /Applications;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = LAVPTest;
 			};
 			name = Release;

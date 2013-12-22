@@ -486,7 +486,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/libav\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = libavPlayer;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/libav\"/**";
 				WRAPPER_EXTENSION = framework;
@@ -515,7 +515,7 @@
 					"$(inherited)",
 					"\"$(SRCROOT)/libav\"",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				PRODUCT_NAME = libavPlayer;
 				USER_HEADER_SEARCH_PATHS = "\"$(SRCROOT)/libav\"/**";
 				WRAPPER_EXTENSION = framework;

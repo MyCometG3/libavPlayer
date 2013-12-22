@@ -84,7 +84,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 {
 	// perform clean up
 	if (is && is->decoderThread) {
-		NSThread *dt = is->decoderThread;
+		NSThread *dt = (__bridge_transfer NSThread*)(is->decoderThread);
 		[dt cancel];
 		while (![dt isFinished]) {
 			usleep(10*1000);
@@ -111,7 +111,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
         // Prepare thread runloop
         NSRunLoop* runLoop = [NSRunLoop currentRunLoop];
         
-        is->decoderThread = [NSThread currentThread];
+        is->decoderThread = (__bridge_retained void*)[NSThread currentThread];
         
         NSTimer *timer = [NSTimer scheduledTimerWithTimeInterval:1.0/120
                                                           target:self

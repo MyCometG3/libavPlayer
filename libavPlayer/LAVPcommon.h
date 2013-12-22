@@ -266,16 +266,16 @@ typedef struct VideoState {
     volatile int eof_flag;
     
     /* Extension; Sub thread */
-	dispatch_queue_t parse_queue;
-	dispatch_group_t parse_group;
-	dispatch_queue_t video_queue;
-	dispatch_group_t video_group;
-	dispatch_queue_t subtitle_queue;
-	dispatch_group_t subtitle_group;
+	void* parse_queue; // dispatch_queue_t
+	void* parse_group; // dispatch_group_t
+	void* video_queue; // dispatch_queue_t
+	void* video_group; // dispatch_group_t
+	void* subtitle_queue; // dispatch_queue_t
+	void* subtitle_group; // dispatch_group_t
     
     /* Extension; Obj-C Instance */
-	__unsafe_unretained id decoder;	// LAVPDecoder instance
-	__unsafe_unretained id decoderThread;	// NSThread instance for decoderThread
+	void* decoder;  // LAVPDecoder*
+	void* decoderThread;    // NSThread*
 	
     /* =========================================================== */
     
@@ -324,7 +324,7 @@ typedef struct VideoState {
     /* LAVP: extension */
 	AudioQueueRef outAQ;
 	AudioStreamBasicDescription asbd;
-	dispatch_queue_t audioDispatchQueue;
+	void* audioDispatchQueue; // dispatch_queue_t
     
     /* =========================================================== */
     

@@ -439,8 +439,9 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
             inCallbackProc(is, inAQ, inBuffer);
         };
         
-        is->audioDispatchQueue = dispatch_queue_create("audio", DISPATCH_QUEUE_SERIAL);
-        err = AudioQueueNewOutputWithDispatchQueue(&outAQ, &is->asbd, 0, is->audioDispatchQueue, inCallbackBlock);
+        dispatch_queue_t audioDispatchQueue = dispatch_queue_create("audio", DISPATCH_QUEUE_SERIAL);
+        is->audioDispatchQueue = (__bridge_retained void*)audioDispatchQueue;
+        err = AudioQueueNewOutputWithDispatchQueue(&outAQ, &is->asbd, 0, (__bridge dispatch_queue_t)is->audioDispatchQueue, inCallbackBlock);
     }
 #else
     // using direct callback
@@ -587,8 +588,8 @@ void LAVPAudioQueueDealloc(VideoState *is)
 	
     // stop dispatch queue
     if (is->audioDispatchQueue) {
-        // NOTE: dispatch_queue_t is obj-c object now; ARC should handle it though
-        dispatch_release(is->audioDispatchQueue);
+        dispatch_queue_t audioDispatchQueue = (__bridge_transfer dispatch_queue_t)is->audioDispatchQueue;
+        audioDispatchQueue = NULL; // ARC
         is->audioDispatchQueue = NULL;
     }
     
