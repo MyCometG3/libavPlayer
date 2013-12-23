@@ -62,7 +62,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 			[NSThread detachNewThreadSelector:@selector(threadMain) toTarget:self withObject:nil];
 			
             int msec = 10;
-			int retry = 1500/msec;	// 1.5 sec max
+			int retry = 2000/msec;	// 2.0 sec max
 			while(retry--) {
 				usleep(msec*1000);
 				
@@ -368,7 +368,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
             stream_seek(is, ts, -10, 0);
             
             {
-                int count = 0, limit = 100, unit = 10;
+                int count = 0, limit = 200, unit = 10;
                 
                 // Wait till avformat_seek_file() is completed
                 for (; limit > count; count++) {
@@ -383,12 +383,11 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
                 }
                 
                 if (count >= limit) {
-                    NSLog(@"NOTE: seek1 timeout detected.");
-#if 1
                     int64_t diff = (now_s() * 1.0e6) - ts; // in usec
-                    NSLog(@"DEBUG: seek diff1 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
-                          count, ((limit > count) ? @"" : @"timeout")); // in sec
-#endif
+                    NSLog(@"NOTE: seek1 timeout detected. (delta=%8.3f)", diff/1.0e6);
+
+                    //NSLog(@"DEBUG: seek diff1 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@",
+                    //diff/1.0e6, ts/1.0e6, now_s(), count, ((limit > count) ? @"" : @"timeout")); // in sec
                 }
             }
             
@@ -420,7 +419,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
                     double_t accelarate = 5.0;
                     [self setRate:accelarate];
                     
-                    int count = 0, limit = 150, unit = 10;
+                    int count = 0, limit = 200, unit = 10;
                     for (;count<limit;count++) {
                         double_t posNow = now_s(); // in sec
                         if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
@@ -431,12 +430,11 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
                     }
                     
                     if (count >= limit) {
-                        NSLog(@"NOTE: seek2 timeout detected.");
-#if 1
                         double_t diff = (now_s() * 1.0e6) - ts; // in usec
-                        NSLog(@"DEBUG: seek diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
-                              count, ((limit > count) ? @"" : @"timeout")); // in sec
-#endif
+                        NSLog(@"NOTE: seek2 timeout detected. (delta=%8.3f)", diff/1.0e6);
+
+                        //NSLog(@"DEBUG: seek diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@",
+                        //diff/1.0e6, ts/1.0e6, now_s(), count, ((limit > count) ? @"" : @"timeout")); // in sec
                     }
                     [self setRate:0.0];
                 }
