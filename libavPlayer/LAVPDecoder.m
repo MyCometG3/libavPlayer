@@ -124,8 +124,6 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
         NSThread *dt = [NSThread currentThread];
         while ( ![dt isCancelled] ) {
             @autoreleasepool {
-                //NSLog(@"pos = %04.3f (sec)", [self position]/1.0e6);
-                
                 [runLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.05]];
             }
         }
@@ -253,7 +251,6 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
 		}
 	}
 	
-	//NSLog(@"size = %@", NSStringFromSize(size));
 	return size;
 }
 
@@ -384,14 +381,15 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
                     if (is->paused) break;
                     usleep(unit*1000);
                 }
+                
+                if (count >= limit) {
+                    NSLog(@"NOTE: seek1 timeout detected.");
 #if 1
-                if (count >= limit)
-                {
                     int64_t diff = (now_s() * 1.0e6) - ts; // in usec
-                    NSLog(@"diff1 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
+                    NSLog(@"DEBUG: seek diff1 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
                           count, ((limit > count) ? @"" : @"timeout")); // in sec
-                }
 #endif
+                }
             }
             
             // seek wait - blocking
@@ -399,7 +397,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
             if (isnan(posNow) || (!isnan(posNow) && posNow * 1.0e6 < pos))
             {
                 /* TODO seems to be NAN always while in pause. Why? */
-                //NSLog(@"%@", isnan(posNow) ? @"NAN" : @"-");
+                //NSLog(@"DEBUG: %@", isnan(posNow) ? @"NAN" : @"-");
                 
                 if (!blocking) {
 #if 0
@@ -431,14 +429,15 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
                         }
                         usleep(unit*1000);
                     }
+                    
+                    if (count >= limit) {
+                        NSLog(@"NOTE: seek2 timeout detected.");
 #if 1
-                    if (count >= limit)
-                    {
                         double_t diff = (now_s() * 1.0e6) - ts; // in usec
-                        NSLog(@"diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
+                        NSLog(@"DEBUG: seek diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@", diff/1.0e6, ts/1.0e6, now_s(),
                               count, ((limit > count) ? @"" : @"timeout")); // in sec
-                    }
 #endif
+                    }
                     [self setRate:0.0];
                 }
             }
@@ -446,7 +445,7 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
         
         // Workaround - Not strict
         double_t posFinal = now_s(); // in sec
-        //NSLog(@"pos=%.3f, lastPosition=%.3f", posFinal/1.0e6, lastPosition/1.0e6); // in sec
+        //NSLog(@"DEBUG: pos=%.3f, lastPosition=%.3f", posFinal/1.0e6, lastPosition/1.0e6); // in sec
         lastPosition = isnan(posFinal) ? pos : posFinal*1.0e6; // in usec
         
 		return lastPosition;

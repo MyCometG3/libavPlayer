@@ -125,7 +125,7 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 	BOOL different = ([self window] != [inNotification object]);
 	if (isWindow && different) return;
 	
-	//NSLog(@"invalidate: (from window:%@)", (isWindow ? @"YES" : @"NO"));
+	//NSLog(@"DEGUB: invalidate: (from window:%@)", (isWindow ? @"YES" : @"NO"));
 	
 	// Stop and Release the display link first
 	[self stopCVDisplayLink];
@@ -441,14 +441,15 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		// Make sure the FBO was created succesfully.
 		GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 		if (GL_FRAMEBUFFER_COMPLETE_EXT != status) {
-			NSLog(@"glFramebufferTexture2DEXT() failed! (0x%04x)", status);
+            NSString* statusStr = @"OTHER ERROR";
 			if (GL_FRAMEBUFFER_UNSUPPORTED_EXT == status) {
-				NSLog(@"GL_FRAMEBUFFER_UNSUPPORTED_EXT");
+				statusStr = @"GL_FRAMEBUFFER_UNSUPPORTED_EXT";
 			} else if (GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT == status) {
-				NSLog(@"GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT");
+				statusStr = @"GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT";
 			} else if (GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT == status) {
-				NSLog(@"GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT");
+				statusStr = @"GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT";
 			}
+			NSLog(@"ERROR: glFramebufferTexture2DEXT() failed! (0x%04x:%@)", status, statusStr);
 			assert(GL_FRAMEBUFFER_COMPLETE_EXT != status);
 		}
 		
@@ -738,9 +739,9 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 			textureRect.size.width = maxTexSize * imageAspectRatio ;
 			textureRect.size.height = maxTexSize; 
 		}
-		//NSLog(@"texture rect = %@ (shrinked)", NSStringFromRect(textureRect));
+		//NSLog(@"DEGUB: texture rect = %@ (shrinked)", NSStringFromRect(textureRect));
 	} else {
-		//NSLog(@"texture rect = %@", NSStringFromRect(textureRect));
+		//NSLog(@"DEGUB: texture rect = %@", NSStringFromRect(textureRect));
 	}
 	
 	// Try to update NSOpenGLView

@@ -176,7 +176,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 {
 	// position uses double value between 0.0 and 1.0
 	
-	//NSLog(@"seek start");
+	//NSLog(@"DEBUG: seek started");
 	
 	int64_t	duration = [decoder duration];	//usec
 	
@@ -199,10 +199,10 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	
 	if (!muted) [self setMuted:NO];
 	
-	//NSLog(@"seek finished");
+	//NSLog(@"DEBUG: seek finished");
 	
 	// Post notification
-	//NSLog(@"LAVPStreamDidEndNotification");
+	//NSLog(@"DEBUG: LAVPStreamDidSeekNotification");
 	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 	NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidSeekNotification
 																 object:self];
@@ -217,7 +217,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (void) setRate:(double_t) newRate
 {
-	//NSLog(@"setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
+	//NSLog(@"DEBUG: setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
 	
 	if ([decoder rate] == newRate) return;
 	
@@ -231,6 +231,8 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	if ([decoder rate]) [decoder setRate:0.0];
 	
 	if (newRate != 0.0) {
+		//NSLog(@"DEBUG: movie started");
+		
 		[decoder setRate:newRate];
 		
 		// setup EndOfMovie Checker
@@ -249,7 +251,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 - (void)checkEndOfMovie
 {
 	if ([decoder eof] && [decoder rate] == 0.0) {
-		//NSLog(@"movieFinished");
+		//NSLog(@"DEBUG: movie finished");
 		
 		// stop notificatino timer
 		if (timer) {
@@ -258,7 +260,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 		}
 		
 		// Post notification
-		//NSLog(@"LAVPStreamDidEndNotification");
+		//NSLog(@"DEBUG: LAVPStreamDidEndNotification");
 		NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
 		NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidEndNotification
 																	 object:self];

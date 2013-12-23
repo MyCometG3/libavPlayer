@@ -68,7 +68,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 
 - (void)invalidate:(NSNotification*)inNotification
 {
-	//NSLog(@"invalidate:");
+	//NSLog(@"DEBUG: invalidate:");
 	
     CGDisplayRemoveReconfigurationCallback(MyDisplayReconfigurationCallBack, (__bridge void *)(self));
 	
@@ -434,14 +434,15 @@ bail:
 		// Make sure the FBO was created succesfully.
 		GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
 		if (GL_FRAMEBUFFER_COMPLETE_EXT != status) {
-			NSLog(@"glFramebufferTexture2DEXT() failed! (0x%04x)", status);
+            NSString* statusStr = @"OTHER ERROR";
 			if (GL_FRAMEBUFFER_UNSUPPORTED_EXT == status) {
-				NSLog(@"GL_FRAMEBUFFER_UNSUPPORTED_EXT");
+				statusStr = @"GL_FRAMEBUFFER_UNSUPPORTED_EXT";
 			} else if (GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT == status) {
-				NSLog(@"GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT");
+				statusStr = @"GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT";
 			} else if (GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT == status) {
-				NSLog(@"GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT");
+				statusStr = @"GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT";
 			}
+			NSLog(@"ERROR: glFramebufferTexture2DEXT() failed! (0x%04x:%@)", status, statusStr);
 			assert(GL_FRAMEBUFFER_COMPLETE_EXT != status);
 		}
 		
@@ -803,9 +804,9 @@ bail:
 			textureRect.size.width = maxTexSize * imageAspectRatio ;
 			textureRect.size.height = maxTexSize; 
 		}
-		//NSLog(@"texture rect = %@ (shrinked)", NSStringFromRect(textureRect));
+		//NSLog(@"DEBUG: texture rect = %@ (shrinked)", NSStringFromRect(textureRect));
 	} else {
-		//NSLog(@"texture rect = %@", NSStringFromRect(textureRect));
+		//NSLog(@"DEBUG: texture rect = %@", NSStringFromRect(textureRect));
 	}
 	
 	// Try to update CAOpenGLLayer

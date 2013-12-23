@@ -144,7 +144,7 @@ AVDictionary **setup_find_stream_info_opts(AVFormatContext *s,
 /* open a given stream. Return 0 if OK */
 int stream_component_open(VideoState *is, int stream_index)
 {
-	//NSLog(@"stream_component_open(%d)", stream_index);
+	//NSLog(@"DEBUG: stream_component_open(%d)", stream_index);
 	
 	AVFormatContext *ic = is->ic;
 	AVCodecContext *avctx;
@@ -278,13 +278,13 @@ int stream_component_open(VideoState *is, int stream_index)
 			break;
 	}
     
-	//NSLog(@"stream_component_open(%d) done", stream_index);
+	//NSLog(@"DEBUG: stream_component_open(%d) done", stream_index);
 	return 0;
 }
 
 void stream_component_close(VideoState *is, int stream_index)
 {
-	//NSLog(@"stream_component_close(%d)", stream_index);
+	//NSLog(@"DEBUG: stream_component_close(%d)", stream_index);
 	
 	AVFormatContext *ic = is->ic;
 	AVCodecContext *avctx;
@@ -385,7 +385,7 @@ void stream_component_close(VideoState *is, int stream_index)
 			break;
 	}
     
-	//NSLog(@"stream_component_close(%d) done", stream_index);
+	//NSLog(@"DEBUG: stream_component_close(%d) done", stream_index);
 }
 
 static int decode_interrupt_cb(void *ctx)
@@ -458,7 +458,6 @@ int read_thread(void *arg)
             is->infinite_buffer = 1;
         
         /* ================================================================================== */
-        //NSLog(@"abort_request is %d", is->abort_request);
         
         // decode loop
         is->eof_flag = 0; // LAVP:
@@ -479,7 +478,7 @@ int read_thread(void *arg)
                     else
                         av_read_play(is->ic);
                     
-                    //NSLog(@"%@", is->paused ? @"paused:YES" : @"paused:NO");
+                    //NSLog(@"DEBUG: %@", is->paused ? @"paused:YES" : @"paused:NO");
                 }
                 
 #if CONFIG_RTSP_DEMUXER
@@ -504,7 +503,8 @@ int read_thread(void *arg)
                     
                     ret = avformat_seek_file(is->ic, -1, seek_min, seek_target, seek_max, is->seek_flags);
                     if (ret < 0) {
-                        fprintf(stderr, "%s: error while seeking\n", is->ic->filename);
+                        av_log(NULL, AV_LOG_ERROR,
+                               "%s: error while seeking\n", is->ic->filename);
                     }else{
                         if (is->audio_stream >= 0) {
                             packet_queue_flush(&is->audioq);
@@ -574,7 +574,7 @@ int read_thread(void *arg)
                     // LAVP: finally mark end of stream flag (reset when seek performed)
                     is->eof_flag = 1;
                     
-                    //NSLog(@"eof_flag = 1 on %f", get_master_clock(is));
+                    //NSLog(@"DEBUG: eof_flag = 1 on %f", get_master_clock(is));
                 }
                 if(eof) {
                     if (is->video_stream >= 0)
@@ -743,11 +743,7 @@ int get_master_sync_type(VideoState *is) {
 /* get the current master clock value */
 double get_master_clock(VideoState *is)
 {
-#if 0
-	printf("vidclk:%8.3f audclk:%8.3f \n",
-           (double_t)get_clock(&is->vidclk),
-           (double_t)get_clock(&is->audclk));
-#endif
+	//NSLog(@"DEBUG: vidclk:%8.3f audclk:%8.3f", (double_t)get_clock(&is->vidclk), (double_t)get_clock(&is->audclk));
     
 	double val;
     switch (get_master_sync_type(is)) {
@@ -835,7 +831,7 @@ void stream_pause(VideoState *is)
 			LAVPAudioQueueStart(is);
 	}
 	
-	//NSLog(@"stream_pause = %s at %3.3f", (is->paused ? "paused" : "play"), get_master_clock(is));
+	//NSLog(@"DEBUG: stream_pause = %s at %3.3f", (is->paused ? "paused" : "play"), get_master_clock(is));
 }
 
 void stream_close(VideoState *is)
@@ -1099,7 +1095,7 @@ VideoState* stream_open(id opaque, NSURL *sourceURL)
 	return is;
 	
 bail:
-	fprintf(stderr, "ret = %d, err = %d\n", ret, err);
+    av_log(NULL, AV_LOG_ERROR, "ret = %d, err = %d\n", ret, err);
 	if (is->filename)
         free(is->filename);
     free (is);

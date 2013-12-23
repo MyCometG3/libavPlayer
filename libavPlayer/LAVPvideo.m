@@ -356,7 +356,8 @@ display:
                 av_diff = get_master_clock(is) - get_clock(&is->vidclk);
             else if (is->audio_st)
                 av_diff = get_master_clock(is) - get_clock(&is->audclk);
-			printf("%7.2f %s:%7.3f fd=%4d aq=%5dKB vq=%5dKB sq=%5dB f=%"PRId64"/%"PRId64"   \r",
+            av_log(NULL, AV_LOG_INFO,
+                   "%7.2f %s:%7.3f fd=%4d aq=%5dKB vq=%5dKB sq=%5dB f=%"PRId64"/%"PRId64"   \r",
                    get_master_clock(is),
                    (is->audio_st && is->video_st) ? "A-V" : (is->video_st ? "M-V" : (is->audio_st ? "M-A" : "   ")),
                    av_diff,
@@ -672,10 +673,11 @@ int hasImage(void *opaque, double_t targetpts)
         if (!vp) {
             // Workaround: When all pictures in pictq are later time stamp then targetpts
             vp = &is->pictq[is->pictq_rindex];
-            //NSLog(@"target:%.3f, vp->pts:%.3f, pts_diff:%.3f", targetpts, vp->pts, vp->pts - targetpts);
         }
 		
 		if (vp) {
+            //NSLog(@"DEBUG: hasImage(%.3lf) => (%.3lf); delta=%.3lf)", *targetpts, vp->pts, vp->pts - *targetpts);
+            
 			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
 			
 			LAVPUnlockMutex(is->pictq_mutex);
@@ -734,7 +736,6 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
         if (!vp) {
             // Workaround: When all pictures in pictq are later time stamp then targetpts
             vp = &is->pictq[is->pictq_rindex];
-            //NSLog(@"target:%.3f, vp->pts:%.3f, pts_diff:%.3f", *targetpts, vp->pts, vp->pts - *targetpts);
         }
 		
 		if (vp) {
@@ -762,7 +763,8 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
 #endif
 			
 			if (result > 0) {
-				//NSLog(@"copyImage(%.3lf) (%d); %.3lf", targetpts, is->pictq_size, vp->pts-targetpts);
+				//NSLog(@"DEBUG: copyImage(%.3lf) => (%.3lf); delta=%.3lf)", *targetpts, vp->pts, vp->pts - *targetpts);
+                
 				is->lastPTScopied = vp->pts;
 				*targetpts = vp->pts;
 				
@@ -771,6 +773,8 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
 			} else {
 				NSLog(@"ERROR: result != 0 (%s)", __FUNCTION__);
 			}
+		} else {
+			NSLog(@"ERROR: vp == NULL (%s)", __FUNCTION__);
 		}
 	} else {
 		//NSLog(@"ERROR: is->pictq_size == 0 (%s)", __FUNCTION__);
@@ -793,6 +797,8 @@ int hasImageCurrent(void *opaque)
 		if(vp) {
 			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
 			
+            //NSLog(@"DEBUG: hasImageCurrent() => (%.3lf)", vp->pts);
+            
 			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
 		} else {
@@ -858,7 +864,8 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 #endif
 			
 			if (result > 0) {
-				//NSLog(@"NOTE: copyImageCurrent() done. = %lf", vp->pts);
+				//NSLog(@"DEBUG: copyImageCurrent() => (%.3lf)", vp->pts);
+                
 				is->lastPTScopied = vp->pts;
 				*targetpts = vp->pts;
 				

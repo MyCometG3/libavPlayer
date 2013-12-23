@@ -162,23 +162,22 @@ NSString* formatTime(QTTime qttime)
 
 - (void) windowWillClose:(NSNotification *)notification
 {
-	//NSLog(@"LAVPTest: -windowWillClose:");
 	NSWindow *obj = [notification object];
 	if (obj == layerwindow) {
-		NSLog(@"layerwindow closing...");
+		NSLog(@"NOTE: layerwindow closing...");
 		[layerstream stop];
 		[layer setStream:nil];
 		layerstream = nil;
 		layerwindow = nil;
-		NSLog(@"layerwindow closed.");
+		NSLog(@"NOTE: layerwindow closed.");
 	}
 	if (obj == viewwindow) {
-		NSLog(@"viewwindow closing...");
+		NSLog(@"NOTE: viewwindow closing...");
 		[viewstream stop];
 		[view setStream:nil];
 		viewstream = nil;
 		viewwindow = nil;
-		NSLog(@"viewwindow closed.");
+		NSLog(@"NOTE: viewwindow closed.");
 	}
 }
 

@@ -328,7 +328,7 @@ int audio_decode_frame(VideoState *is)
 static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer)
 {
     @autoreleasepool {
-        // NSLog(@"inCallbackProc");
+        //NSLog(@"DEBUG: inCallbackProc");
         
         uint8_t *stream = inBuffer->mAudioData;
         int len = inBuffer->mAudioDataBytesCapacity;
@@ -407,7 +407,7 @@ void LAVPAudioQueueInit(VideoState *is, AVCodecContext *avctx)
 {
     if (is->outAQ) return;
     
-	//NSLog(@"LAVPAudioQueueInit");
+	//NSLog(@"DEBUG: LAVPAudioQueueInit");
 	
 	if (!avctx->sample_rate) {
 		// NOTE: is->outAQ, is->audioDispatchQueue are left uninitialized
@@ -478,7 +478,7 @@ void LAVPAudioQueueStart(VideoState *is)
 {
 	if (!is->outAQ) return;
 	
-	//NSLog(@"LAVPAudioQueueStart");
+	//NSLog(@"DEBUG: LAVPAudioQueueStart");
 	
 	// Update playback rate
 	BOOL pitchDiff = audio_isPitchChanged(is);
@@ -508,7 +508,7 @@ void LAVPAudioQueuePause(VideoState *is)
 {
 	if (!is->outAQ) return;
 	
-	//NSLog(@"LAVPAudioQueuePause");
+	//NSLog(@"DEBUG: LAVPAudioQueuePause");
 	
     //
 	OSStatus err = 0;
@@ -524,7 +524,7 @@ void LAVPAudioQueueStop(VideoState *is)
 {
 	if (!is->outAQ) return;
 	
-	//NSLog(@"LAVPAudioQueueStop");
+	//NSLog(@"DEBUG: LAVPAudioQueueStop");
 	
 	// Check AudioQueue is running or not
 	OSStatus err = 0;
@@ -563,14 +563,14 @@ void LAVPAudioQueueStop(VideoState *is)
 #endif
 	}
     
-	//NSLog(@"LAVPAudioQueueStop done");
+	//NSLog(@"DEBUG: LAVPAudioQueueStop done");
 }
 
 void LAVPAudioQueueDealloc(VideoState *is)
 {
 	if (!is->outAQ) return;
 	
-	//NSLog(@"LAVPAudioQueueDealloc");
+	//NSLog(@"DEBUG: LAVPAudioQueueDealloc");
 	
     // stop AudioQueue
 	OSStatus err = 0;
@@ -590,7 +590,7 @@ void LAVPAudioQueueDealloc(VideoState *is)
         is->audioDispatchQueue = NULL;
     }
     
-	//NSLog(@"LAVPAudioQueueDealloc done");
+	//NSLog(@"DEBUG: LAVPAudioQueueDealloc done");
 }
 
 AudioQueueParameterValue getVolume(VideoState *is)
@@ -628,10 +628,8 @@ BOOL audio_isPitchChanged(VideoState *is)
 	assert(err == 0);
 	
 	if (currentRate == is->playRate) {
-		//NSLog(@"No playrate change is detected.");
 		return NO;
 	} else {
-		//NSLog(@"New playrate = %1.3f (old %1.3f)", is->playRate, currentRate);
 		return YES;
 	}
 }
@@ -644,7 +642,7 @@ void audio_updatePitch(VideoState *is)
 	
 	assert(is->playRate > 0.0);
 	
-    //NSLog(@"is->playRate = %.1f", is->playRate);
+    //NSLog(@"DEBUG: is->playRate = %.1f", is->playRate);
     
 	if (is->playRate == 1.0) {
 		// Set playrate
