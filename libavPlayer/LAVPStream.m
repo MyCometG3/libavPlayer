@@ -98,9 +98,9 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (BOOL) readyForTime:(const CVTimeStamp*)ts
 {
-    double_t offset = ((double)ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
-	double_t position = [decoder position]/AV_TIME_BASE + offset; // in sec
-	double_t duration = [decoder duration]/AV_TIME_BASE; // in sec
+    double_t offset = (double)(ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
+	double_t position = (double)[decoder position]/AV_TIME_BASE + offset; // in sec
+	double_t duration = (double)[decoder duration]/AV_TIME_BASE; // in sec
 	
 	// clipping
 	position = (position < 0 ? 0 : position);
@@ -119,9 +119,9 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 
 - (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 {
-    double_t offset = ((double)ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
-	double_t position = [decoder position]/AV_TIME_BASE + offset; // in sec
-	double_t duration = [decoder duration]/AV_TIME_BASE; // in sec
+    double_t offset = (double)(ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
+	double_t position = (double)[decoder position]/AV_TIME_BASE + offset; // in sec
+	double_t duration = (double)[decoder duration]/AV_TIME_BASE; // in sec
 	
 	// clipping
 	position = (position < 0 ? 0 : position);
@@ -245,7 +245,7 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	
     // current host time
     _htOffset = CVGetCurrentHostTime();
-    _posOffset = [decoder position] / [decoder duration];
+    _posOffset = (double)[decoder position] / [decoder duration];
 }
 
 - (void)checkEndOfMovie
