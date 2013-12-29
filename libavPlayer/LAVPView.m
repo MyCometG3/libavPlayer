@@ -121,18 +121,14 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void)invalidate:(NSNotification*)inNotification
 {
-	// Check if sender is my window or not
-	BOOL isWindow = [[inNotification object] isKindOfClass:[NSWindow class]];
-	BOOL different = ([self window] != [inNotification object]);
-	if (isWindow && different) return;
-	
-	//NSLog(@"DEGUB: invalidate: (from window:%@)", (isWindow ? @"YES" : @"NO"));
-	
+    //NSLog(@"DEGUB: view invalidate: from %@", [inNotification class]);
+    
 	// Stop and Release the display link first
 	[self stopCVDisplayLink];
 	
 	// Resign observer
 	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	[[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
 	
 	// Release stream
 	if (_stream) {
@@ -234,8 +230,6 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		
 		//
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSApplicationWillTerminateNotification object:nil];
-		
-		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(invalidate:) name:NSWindowWillCloseNotification object:nil];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
 		

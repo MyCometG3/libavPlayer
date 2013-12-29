@@ -69,8 +69,9 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 
 - (void)invalidate:(NSNotification*)inNotification
 {
-	//NSLog(@"DEBUG: invalidate:");
+    //NSLog(@"DEGUB: layer invalidate: from %@", [inNotification class]);
 	
+    self.asynchronous = NO;
     CGDisplayRemoveReconfigurationCallback(MyDisplayReconfigurationCallBack, (__bridge void *)(self));
 	
 	// Resign observer
