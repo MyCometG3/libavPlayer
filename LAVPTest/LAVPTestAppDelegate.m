@@ -169,6 +169,8 @@ NSString* formatTime(QTTime qttime)
 		[layer setStream:nil];
 		layerstream = nil;
 		layerwindow = nil;
+        [layer removeFromSuperlayer];
+        layer = nil;
 		NSLog(@"NOTE: layerwindow closed.");
 	}
 	if (obj == viewwindow) {
