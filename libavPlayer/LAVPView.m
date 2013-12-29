@@ -49,6 +49,7 @@
 - (void) setCVPixelBuffer:(CVPixelBufferRef) pb;
 - (void) streamDidSeek:(NSNotification *)aNotification;
 - (void) redrawRequest:(NSNotification *)aNotification;
+- (void) handleDisplayLink:(NSNotification *)aNotification;
 
 @end
 
@@ -239,6 +240,12 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(windowChangedScreen:) name:NSWindowDidMoveNotification object:nil];
 		
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamDidSeek:) name:LAVPStreamDidSeekNotification object:nil];
+        
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(streamStartSeek:) name:LAVPStreamStartSeekNotification object:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleDisplayLink:) name:LAVPStreamDidEndNotification object:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleDisplayLink:) name:LAVPStreamUpdateRateNotification object:nil];
 
 		[[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self selector:@selector(redrawRequest:) name:NSWorkspaceDidWakeNotification object:nil];
 	}
@@ -680,15 +687,40 @@ static CVReturn MyDisplayLinkCallback(CVDisplayLinkRef displayLink,
 
 - (void) streamDidSeek:(NSNotification *)aNotification
 {
-	id sender = [aNotification object];
+	LAVPStream *sender = [aNotification object];
 	if (sender == _stream) {
 		lastPTS = -1;
+        
+        // Give some interval to displayLink updating image
+        //[self performSelector:@selector(handleDisplayLink:) withObject:aNotification afterDelay:0.05];
+        NSNotification * delayed = [NSNotification notificationWithName:@"delayed" object:sender];
+        [self performSelector:@selector(handleDisplayLink:) withObject:delayed afterDelay:0.05];
+	}
+}
+
+- (void) streamStartSeek:(NSNotification *)aNotification
+{
+	LAVPStream * sender = [aNotification object];
+	if (sender == _stream) {
+        if (!displayLink) [self startCVDisplayLink];
 	}
 }
 
 - (void) redrawRequest:(NSNotification *)aNotification
 {
 	lastPTS = -1;
+}
+
+- (void) handleDisplayLink:(NSNotification *)aNotification
+{
+	LAVPStream *sender = [aNotification object];
+	if (sender == _stream) {
+        if ([sender rate] > 0.0) {
+            if (!displayLink) [self startCVDisplayLink];
+        } else {
+            if (displayLink) [self stopCVDisplayLink];
+        }
+    }
 }
 
 /* =============================================================================================== */
