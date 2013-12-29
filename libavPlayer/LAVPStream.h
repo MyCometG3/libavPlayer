@@ -28,6 +28,8 @@
 
 extern NSString * const LAVPStreamDidEndNotification;
 extern NSString * const LAVPStreamDidSeekNotification;
+extern NSString * const LAVPStreamStartSeekNotification;
+extern NSString * const LAVPStreamUpdateRateNotification;
 
 @class LAVPDecoder;
 

@@ -28,6 +28,8 @@
 
 NSString * const LAVPStreamDidEndNotification = @"LAVPStreamDidEndNotification";
 NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification";
+NSString * const LAVPStreamStartSeekNotification = @"LAVPStreamStartSeekNotification";
+NSString * const LAVPStreamUpdateRateNotification = @"LAVPStreamUpdateRateNotification";
 
 #define AV_TIME_BASE            1000000
 
@@ -177,7 +179,16 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	// position uses double value between 0.0 and 1.0
 	
 	//NSLog(@"DEBUG: seek started");
-	
+
+    {
+        // Post notification
+        //NSLog(@"DEBUG: LAVPStreamStartSeekNotification");
+        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+        NSNotification *notification = [NSNotification notificationWithName:LAVPStreamStartSeekNotification
+                                                                     object:self];
+        [center postNotification:notification];
+    }
+    
 	int64_t	duration = [decoder duration];	//usec
 	
 	// clipping
@@ -201,12 +212,14 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
 	
 	//NSLog(@"DEBUG: seek finished");
 	
-	// Post notification
-	//NSLog(@"DEBUG: LAVPStreamDidSeekNotification");
-	NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-	NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidSeekNotification
-																 object:self];
-	[center postNotification:notification];
+    {
+        // Post notification
+        //NSLog(@"DEBUG: LAVPStreamDidSeekNotification");
+        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+        NSNotification *notification = [NSNotification notificationWithName:LAVPStreamDidSeekNotification
+                                                                     object:self];
+        [center postNotification:notification];
+    }
 }
 
 - (double_t) rate
@@ -246,6 +259,12 @@ NSString * const LAVPStreamDidSeekNotification = @"LAVPStreamDidSeekNotification
     // current host time
     _htOffset = CVGetCurrentHostTime();
     _posOffset = (double)[decoder position] / [decoder duration];
+    
+    // Post notification
+    NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+    NSNotification *notification = [NSNotification notificationWithName:LAVPStreamUpdateRateNotification
+                                                                 object:self];
+    [center postNotification:notification];
 }
 
 - (void)checkEndOfMovie
