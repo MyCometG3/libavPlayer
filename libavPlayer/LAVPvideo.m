@@ -158,10 +158,10 @@ static double vp_duration(VideoState *is, VideoPicture *vp, VideoPicture *nextvp
 
 static void pictq_next_picture(VideoState *is) {
     /* update queue size and signal for next picture */
+    LAVPLockMutex(is->pictq_mutex);
     if (++is->pictq_rindex == VIDEO_PICTURE_QUEUE_SIZE)
         is->pictq_rindex = 0;
     
-    LAVPLockMutex(is->pictq_mutex);
     is->pictq_size--;
     LAVPCondSignal(is->pictq_cond);
     LAVPUnlockMutex(is->pictq_mutex);
@@ -171,9 +171,9 @@ static int pictq_prev_picture(VideoState *is) {
     VideoPicture *prevvp;
     int ret = 0;
     /* update queue size and signal for the previous picture */
+    LAVPLockMutex(is->pictq_mutex);
     prevvp = &is->pictq[(is->pictq_rindex + VIDEO_PICTURE_QUEUE_SIZE - 1) % VIDEO_PICTURE_QUEUE_SIZE];
     if (prevvp->allocated && prevvp->serial == is->videoq.serial) {
-        LAVPLockMutex(is->pictq_mutex);
         if (is->pictq_size < VIDEO_PICTURE_QUEUE_SIZE) {
             if (--is->pictq_rindex == -1)
                 is->pictq_rindex = VIDEO_PICTURE_QUEUE_SIZE - 1;
@@ -181,8 +181,8 @@ static int pictq_prev_picture(VideoState *is) {
             ret = 1;
         }
         LAVPCondSignal(is->pictq_cond);
-        LAVPUnlockMutex(is->pictq_mutex);
     }
+    LAVPUnlockMutex(is->pictq_mutex);
     return ret;
 }
 
@@ -239,11 +239,14 @@ void video_refresh(void *opaque, double *remaining_time)
             double last_duration, duration, delay;
             VideoPicture *vp, *lastvp;
             
+            LAVPLockMutex(is->pictq_mutex);
+            
 			/* dequeue the picture */
 			vp = &is->pictq[is->pictq_rindex];
             lastvp = &is->pictq[(is->pictq_rindex + VIDEO_PICTURE_QUEUE_SIZE - 1) % VIDEO_PICTURE_QUEUE_SIZE];
             
             if (vp->serial != is->videoq.serial) {
+                LAVPUnlockMutex(is->pictq_mutex);
                 pictq_next_picture(is);
                 is->video_current_pos = -1;
                 redisplay = 0;
@@ -253,8 +256,10 @@ void video_refresh(void *opaque, double *remaining_time)
             if (lastvp->serial != vp->serial && !redisplay)
                 is->frame_timer = av_gettime() / 1000000.0;
             
-            if (is->paused)
+            if (is->paused) {
+                LAVPUnlockMutex(is->pictq_mutex);
                 goto display;
+            }
             
             /* compute nominal last_duration */
             last_duration = vp_duration(is, lastvp, vp);
@@ -265,6 +270,7 @@ void video_refresh(void *opaque, double *remaining_time)
             
             time= av_gettime()/1000000.0;
             if (time < is->frame_timer + delay && !redisplay) {
+                LAVPUnlockMutex(is->pictq_mutex);
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
                 return;
             }
@@ -273,10 +279,8 @@ void video_refresh(void *opaque, double *remaining_time)
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX)
                 is->frame_timer = time;
             
-            LAVPLockMutex(is->pictq_mutex);
             if (!redisplay && !isnan(vp->pts))
                 update_video_pts(is, vp->pts, vp->pos, vp->serial);
-            LAVPUnlockMutex(is->pictq_mutex);
             
             if (is->pictq_size > 1) {
                 VideoPicture *nextvp = &is->pictq[(is->pictq_rindex + 1) % VIDEO_PICTURE_QUEUE_SIZE];
@@ -284,13 +288,16 @@ void video_refresh(void *opaque, double *remaining_time)
                 if(!is->step && (redisplay || is->framedrop>0 || (is->framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) && time > is->frame_timer + duration){
                     if (!redisplay)
                         is->frame_drops_late++;
+                    LAVPUnlockMutex(is->pictq_mutex);
                     pictq_next_picture(is);
                     redisplay = 0;
                     goto retry;
                 }
             }
+            LAVPUnlockMutex(is->pictq_mutex);
 			
 			if(is->subtitle_st) {
+                LAVPLockMutex(is->subpq_mutex);
                 while (is->subpq_size > 0) {
                     sp = &is->subpq[is->subpq_rindex];
                     
@@ -309,14 +316,13 @@ void video_refresh(void *opaque, double *remaining_time)
                         if (++is->subpq_rindex == SUBPICTURE_QUEUE_SIZE)
                             is->subpq_rindex = 0;
                         
-                        LAVPLockMutex(is->subpq_mutex);
                         is->subpq_size--;
                         LAVPCondSignal(is->subpq_cond);
-                        LAVPUnlockMutex(is->subpq_mutex);
                     } else {
                         break;
                     }
                 }
+                LAVPUnlockMutex(is->subpq_mutex);
 			}
 			
 display:
@@ -390,13 +396,13 @@ void alloc_picture(void *opaque)
     //
 	VideoPicture *vp;
     
+	LAVPLockMutex(is->pictq_mutex);
+    
 	vp = &is->pictq[is->pictq_windex];
 	
     free_picture(vp);
 
 	video_open(is, vp);
-    
-	LAVPLockMutex(is->pictq_mutex);
     
 	vp->pts     = -1;
 	vp->width   = is->video_st->codec->width;
@@ -425,12 +431,13 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
 		   !is->videoq.abort_request) {
 		LAVPCondWait(is->pictq_cond, is->pictq_mutex);
 	}
+    
+	vp = &is->pictq[is->pictq_windex];
+	
 	LAVPUnlockMutex(is->pictq_mutex);
 	
 	if (is->videoq.abort_request)
 		return -1;
-	
-	vp = &is->pictq[is->pictq_windex];
 	
     vp->sar = src_frame->sample_aspect_ratio;
 	
@@ -520,10 +527,10 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
         vp->serial = serial;
 		
 		/* now we can update the picture count */
+		LAVPLockMutex(is->pictq_mutex);
 		if (++is->pictq_windex == VIDEO_PICTURE_QUEUE_SIZE)
 			is->pictq_windex = 0;
         
-		LAVPLockMutex(is->pictq_mutex);
 		is->pictq_size++;
 		LAVPUnlockMutex(is->pictq_mutex);
 	}
