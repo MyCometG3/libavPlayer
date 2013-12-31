@@ -178,6 +178,8 @@ typedef struct AudioParams {
     volatile int channels;
     volatile int64_t channel_layout;
     enum AVSampleFormat fmt;
+    volatile int frame_size;
+    volatile int bytes_per_sec;
 } AudioParams;
 
 typedef struct Clock {

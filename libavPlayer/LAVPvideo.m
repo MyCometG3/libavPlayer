@@ -458,7 +458,7 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
         }
         /* if the queue is aborted, we have to pop the pending ALLOC event or wait for the allocation to complete */
         if (is->videoq.abort_request) {
-            while (!vp->allocated) {
+            while (!vp->allocated && !is->abort_request) {
                 LAVPCondWait(is->pictq_cond, is->pictq_mutex);
             }
         }
@@ -602,7 +602,6 @@ int video_thread(void *arg)
             while (is->paused && !is->videoq.abort_request)
                 usleep(10*1000);
             
-            av_frame_unref(frame);
             av_free_packet(&pkt);
             
             ret = get_video_frame(is, frame, &pkt, &serial);

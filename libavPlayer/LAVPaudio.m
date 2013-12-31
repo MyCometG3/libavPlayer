@@ -65,6 +65,12 @@ int audio_open(void *opaque, int64_t wanted_channel_layout, int wanted_nb_channe
     audio_hw_params->freq = wanted_sample_rate;
     audio_hw_params->channel_layout = wanted_channel_layout;
     audio_hw_params->channels =  wanted_nb_channels;
+    audio_hw_params->frame_size = av_samples_get_buffer_size(NULL, audio_hw_params->channels, 1, audio_hw_params->fmt, 1);
+    audio_hw_params->bytes_per_sec = av_samples_get_buffer_size(NULL, audio_hw_params->channels, audio_hw_params->freq, audio_hw_params->fmt, 1);
+    if (audio_hw_params->bytes_per_sec <= 0 || audio_hw_params->frame_size <= 0) {
+        av_log(NULL, AV_LOG_ERROR, "av_samples_get_buffer_size failed\n");
+        return -1;
+    }
     return SDL_AUDIO_BUFFER_SIZE * audio_hw_params->channels * av_get_bytes_per_sample(audio_hw_params->fmt);
 }
 
@@ -336,8 +342,6 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
         //
         VideoState *is = inUserData;
         int audio_size, len1;
-        int bytes_per_sec;
-        int frame_size = av_samples_get_buffer_size(NULL, is->audio_tgt.channels, 1, is->audio_tgt.fmt, 1);
         
         is->audio_callback_time = av_gettime();
         
@@ -347,7 +351,7 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
                 if (audio_size < 0) {
                     /* if error, just output silence */
                     is->audio_buf      = is->silence_buf;
-                    is->audio_buf_size = sizeof(is->silence_buf) / frame_size * frame_size;
+                    is->audio_buf_size = sizeof(is->silence_buf) / is->audio_tgt.frame_size * is->audio_tgt.frame_size;
                 } else {
                     if (is->show_mode != SHOW_MODE_VIDEO)
                         update_sample_display(is, (int16_t *)is->audio_buf, audio_size);
@@ -363,12 +367,11 @@ static void inCallbackProc (void *inUserData, AudioQueueRef inAQ, AudioQueueBuff
             stream += len1;
             is->audio_buf_index += len1;
         }
-        bytes_per_sec = is->audio_tgt.freq * is->audio_tgt.channels * av_get_bytes_per_sample(is->audio_tgt.fmt);
         is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
         
         /* Let's assume the audio driver that is used by SDL has two periods. */
         if (!isnan(is->audio_clock)) {
-            set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / bytes_per_sec, is->audio_clock_serial, is->audio_callback_time / 1000000.0);
+            set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec, is->audio_clock_serial, is->audio_callback_time / 1000000.0);
             sync_clock_to_slave(&is->extclk, &is->audclk);
         }
         
