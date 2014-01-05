@@ -121,7 +121,15 @@ NSString * const LAVPStreamUpdateRateNotification = @"LAVPStreamUpdateRateNotifi
 
 - (CVPixelBufferRef) getCVPixelBufferForTime:(const CVTimeStamp*)ts asPTS:(double_t *)pts;
 {
-    double_t offset = (double)(ts->hostTime - CVGetCurrentHostTime()) / CVGetHostClockFrequency(); // in sec
+    /*
+     LAVP: CVDisplayLink could be delayed by other issue. It will cause HostTime in CVTimeStamp expired.
+     App should check this before calculation because HostTime is described in uint64_t.
+     */
+    double_t offset = 0.0;
+    uint64_t currentHostTime = CVGetCurrentHostTime();
+    if (ts->hostTime > currentHostTime)
+        offset = (double)(ts->hostTime - currentHostTime) / CVGetHostClockFrequency(); // in sec
+
 	double_t position = (double)[decoder position]/AV_TIME_BASE + offset; // in sec
 	double_t duration = (double)[decoder duration]/AV_TIME_BASE; // in sec
 	
