@@ -427,7 +427,7 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
 	LAVPLockMutex(is->pictq_mutex);
 	
     /* keep the last already displayed picture in the queue */
-	while (is->pictq_size >= VIDEO_PICTURE_QUEUE_SIZE - 1 &&
+	while (is->pictq_size >= VIDEO_PICTURE_QUEUE_SIZE - 3 && // LAVP: keep some picts left in queue
 		   !is->videoq.abort_request) {
 		LAVPCondWait(is->pictq_cond, is->pictq_mutex);
 	}
@@ -491,6 +491,7 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
 		pict.linesize[2] = vp->bmp->linesize[2];
 		
         /* LAVP: duplicate or create YUV420P picture */
+		LAVPLockMutex(is->pictq_mutex);
 		if (src_frame->format == PIX_FMT_YUV420P) {
 #if ALLOW_GPL_CODE
 			CVF_CopyPlane((const UInt8 *)src_frame->data[0], src_frame->linesize[0], vp->height, pict.data[0], pict.linesize[0], vp->height);
@@ -527,7 +528,6 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
         vp->serial = serial;
 		
 		/* now we can update the picture count */
-		LAVPLockMutex(is->pictq_mutex);
 		if (++is->pictq_windex == VIDEO_PICTURE_QUEUE_SIZE)
 			is->pictq_windex = 0;
         
@@ -660,19 +660,33 @@ int hasImage(void *opaque, double_t targetpts)
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
 		
-        /*
-         FIXME: for normal operation, first pict in the pictq should have earlier time stamp
-         before currrent time stamp. It is NOT for now.
-         */
-        for (int offset = 0; offset < is->pictq_size; offset++) {
-            int index = (is->pictq_rindex + offset) % VIDEO_PICTURE_QUEUE_SIZE;
-            tmp = &is->pictq[index];
-            
-            if (0.0 <= tmp->pts && tmp->pts <= targetpts) {
-                if (!vp) {
-                    vp = tmp;
-                } else if (vp->pts < tmp->pts) {
-                    vp = tmp;
+        if (1) {
+            int index = is->pictq_windex;
+            while (index != is->pictq_rindex) {
+                VideoPicture *tmp = &is->pictq[index];
+                if (tmp && tmp->bmp && tmp->allocated) {
+                    if (0.0 <= tmp->pts && tmp->pts <= targetpts) {
+                        if (!vp) {
+                            vp = tmp;
+                        } else if (vp->pts < tmp->pts) {
+                            vp = tmp;
+                        }
+                    }
+                }
+                index = (++index) % VIDEO_PICTURE_QUEUE_SIZE;
+            }
+        }
+        if (!is->paused) { // LAVP: No advance while paused
+            for (int offset = 0; offset < is->pictq_size; offset++) {
+                int index = (is->pictq_rindex + offset) % VIDEO_PICTURE_QUEUE_SIZE;
+                tmp = &is->pictq[index];
+                
+                if (0.0 <= tmp->pts && tmp->pts <= targetpts) {
+                    if (!vp) {
+                        vp = tmp;
+                    } else if (vp->pts < tmp->pts) {
+                        vp = tmp;
+                    }
                 }
             }
         }
@@ -723,31 +737,54 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
 		VideoPicture *vp = NULL;
 		VideoPicture *tmp = NULL;
 		
-        /*
-         FIXME: for normal operation, first pict in the pictq should have earlier time stamp
-         before currrent time stamp. It is NOT for now.
-         */
-        for (int offset = 0; offset < is->pictq_size; offset++) {
-            int index = (is->pictq_rindex + offset) % VIDEO_PICTURE_QUEUE_SIZE;
-            tmp = &is->pictq[index];
-            
-            if (0.0 <= tmp->pts && tmp->pts <= *targetpts) {
-                if (!vp) {
-                    vp = tmp;
-                } else if (vp->pts < tmp->pts) {
-                    vp = tmp;
+        if (1) {
+            int index = is->pictq_windex;
+            while (index != is->pictq_rindex) {
+                VideoPicture *tmp = &is->pictq[index];
+                if (tmp && tmp->bmp && tmp->allocated) {
+                    if (0.0 <= tmp->pts && tmp->pts <= *targetpts) {
+                        if (!vp) {
+                            vp = tmp;
+                        } else if (vp->pts < tmp->pts) {
+                            vp = tmp;
+                        }
+                    }
+                }
+                index = (++index) % VIDEO_PICTURE_QUEUE_SIZE;
+            }
+        }
+        if (!is->paused) { // LAVP: No advance while paused
+            for (int offset = 0; offset < is->pictq_size; offset++) {
+                int index = (is->pictq_rindex + offset) % VIDEO_PICTURE_QUEUE_SIZE;
+                tmp = &is->pictq[index];
+                
+                if (0.0 <= tmp->pts && tmp->pts <= *targetpts) {
+                    if (!vp) {
+                        vp = tmp;
+                    } else if (vp->pts < tmp->pts) {
+                        vp = tmp;
+                    }
                 }
             }
         }
         if (!vp) {
             // Workaround: When all pictures in pictq are later time stamp then targetpts
             vp = &is->pictq[is->pictq_rindex];
+            
+            //NSLog(@"DEBUG: is->pictq_size = %d", is->pictq_size);
         }
 		
 		if (vp) {
 			int result = 0;
 			
-			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) {
+            //if (vp->pts >= 0 && vp->pts < is->lastPTScopied) {
+            //    NSLog(@"DEBUG: %8.3f %s %8.3f < %8.3f (rev)",vp->pts , (vp->pts <= *targetpts?" =<":">  "), *targetpts, is->lastPTScopied);
+            //} else {
+            //    NSLog(@"DEBUG: %8.3f %s %8.3f", vp->pts, (vp->pts <= *targetpts?" =<":">  "), *targetpts);
+            //}
+            
+			if (vp->pts >= 0 && vp->pts < is->lastPTScopied) { // LAVP: use "<" instead of "==" to suppress vibration effect
+
 				LAVPUnlockMutex(is->pictq_mutex);
 				return 2;
 			}
@@ -798,8 +835,20 @@ int hasImageCurrent(void *opaque)
 	LAVPLockMutex(is->pictq_mutex);
 	
 	if (is->pictq_size > 0) {
-		int index = is->pictq_rindex;
-		VideoPicture *vp = &is->pictq[index];
+        VideoPicture *vp = NULL;
+        if (1) {
+            int lastindex = (is->pictq_rindex + VIDEO_PICTURE_QUEUE_SIZE - 1) % VIDEO_PICTURE_QUEUE_SIZE;
+            VideoPicture *tmp = &is->pictq[lastindex];
+            if (tmp && tmp->bmp && tmp->allocated) {
+                if (0.0 <= tmp->pts) {
+                    vp = tmp;
+                }
+            }
+        }
+        if (!vp) {
+            int index = is->pictq_rindex;
+            vp = &is->pictq[index];
+        }
 		if(vp) {
 			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
 			
@@ -840,8 +889,20 @@ int copyImageCurrent(void *opaque, double_t *targetpts, uint8_t* data, int pitch
 	LAVPLockMutex(is->pictq_mutex);
 	
 	if (is->pictq_size > 0) {
-		int index = is->pictq_rindex;
-		VideoPicture *vp = &is->pictq[index];
+        VideoPicture *vp = NULL;
+        if (1) {
+            int lastindex = (is->pictq_rindex + VIDEO_PICTURE_QUEUE_SIZE - 1) % VIDEO_PICTURE_QUEUE_SIZE;
+            VideoPicture *tmp = &is->pictq[lastindex];
+            if (tmp && tmp->bmp && tmp->allocated) {
+                if (0.0 <= tmp->pts) {
+                    vp = tmp;
+                }
+            }
+        }
+        if (!vp) {
+            int index = is->pictq_rindex;
+            vp = &is->pictq[index];
+        }
 		
 		if (vp) {
 			int result = 0;
