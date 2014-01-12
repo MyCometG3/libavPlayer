@@ -377,10 +377,11 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
                 }
                 
                 // wait till is->paused == true
-                for	(;limit>count;count++) {
-                    if (is->paused) break;
-                    usleep(unit*1000);
-                }
+                if (ts) // LAVP: if ts == 0 is->paused is not updated...
+                    for	(;limit>count;count++) {
+                        if (is->paused) break;
+                        usleep(unit*1000);
+                    }
                 
                 if (count >= limit) {
                     int64_t diff = (now_s() * 1.0e6) - ts; // in usec
@@ -392,52 +393,56 @@ extern void stream_setPlayRate(VideoState *is, double_t newRate);
             }
             
             // seek wait - blocking
-            double_t posNow = now_s(); // in sec
-            if (isnan(posNow) || (!isnan(posNow) && posNow * 1.0e6 < pos))
-            {
-                /* TODO seems to be NAN always while in pause. Why? */
-                //NSLog(@"DEBUG: %@", isnan(posNow) ? @"NAN" : @"-");
-                
-                if (!blocking) {
+            if (ts) {
+                double_t posNow = now_s(); // in sec
+                if (isnan(posNow) || (!isnan(posNow) && posNow * 1.0e6 < pos))
+                {
+                    /* TODO seems to be NAN always while in pause. Why? */
+                    //NSLog(@"DEBUG: %@", isnan(posNow) ? @"NAN" : @"-");
+                    
+                    if (!blocking) {
 #if 0
-                    double_t accelarate = 1.0;
-                    [self setRate:accelarate];
-                    
-                    int count = 0, limit = 5, unit = 10;
-                    for (;count<limit;count++) {
-                        double_t posNow = now_s(); // in sec
-                        if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
-                            lastPosition = posNow*1.0e6; // in usec
-                            break;
+                        double_t accelarate = 1.0;
+                        [self setRate:accelarate];
+                        
+                        int count = 0, limit = 5, unit = 10;
+                        for (;count<limit;count++) {
+                            double_t posNow = now_s(); // in sec
+                            if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
+                                lastPosition = posNow*1.0e6; // in usec
+                                break;
+                            }
+                            usleep(unit*1000);
                         }
-                        usleep(unit*1000);
-                    }
-                    
-                    [self setRate:0.0];
+                        
+                        [self setRate:0.0];
 #endif
-                } else {
-                    double_t accelarate = 5.0;
-                    [self setRate:accelarate];
-                    
-                    int count = 0, limit = 200, unit = 10;
-                    for (;count<limit;count++) {
-                        double_t posNow = now_s(); // in sec
-                        if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
-                            lastPosition = posNow*1.0e6; // in usec
-                            break;
+                    } else {
+                        double_t accelarate = 5.0;
+                        [self setRate:accelarate];
+                        
+                        int count = 0, limit = 200, unit = 10;
+                        for (;count<limit;count++) {
+                            double_t posNow = now_s(); // in sec
+                            if (!isnan(posNow) && posNow * 1.0e6 >= pos) {
+                                lastPosition = posNow*1.0e6; // in usec
+                                break;
+                            }
+                            usleep(unit*1000);
                         }
-                        usleep(unit*1000);
-                    }
-                    
-                    if (count >= limit) {
-                        double_t diff = (now_s() * 1.0e6) - ts; // in usec
-                        NSLog(@"NOTE: seek2 timeout detected. (delta=%8.3f)", diff/1.0e6);
+                        
+                        if (count >= limit) {
+                            double_t diff = (now_s() * 1.0e6) - ts; // in usec
+                            NSLog(@"NOTE: seek2 timeout detected. (delta=%8.3f)", diff/1.0e6);
 
-                        //NSLog(@"DEBUG: seek diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@",
-                        //diff/1.0e6, ts/1.0e6, now_s(), count, ((limit > count) ? @"" : @"timeout")); // in sec
+                            //NSLog(@"DEBUG: seek diff2 = %8.3f ts1 = %8.3f, now1 = %8.3f %d %@",
+                            //diff/1.0e6, ts/1.0e6, now_s(), count, ((limit > count) ? @"" : @"timeout")); // in sec
+                        }
+                        [self setRate:0.0];
                     }
-                    [self setRate:0.0];
                 }
+            } else {
+                usleep(0.1e6);
             }
         }
         
