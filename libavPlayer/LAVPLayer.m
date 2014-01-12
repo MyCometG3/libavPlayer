@@ -261,42 +261,7 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 				 displayTime:(const CVTimeStamp *)timeStamp
 {
 	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
-		BOOL ready = NO;
-		if (!timeStamp) 
-			;//ready = [_stream readyForCurrent];
-		else
-			ready = [_stream readyForTime:timeStamp];
-		
-		if (ready) {
-			// Prepare CIImage
-			CVPixelBufferRef pb = NULL;
-			double_t pts = -2;
-			
-			if (!timeStamp) 
-				;//pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
-			else
-				pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
-			
-			if (pb && lastPTS != pts) {
-				lastPTS = pts;
-				
-				[lock lock];
-				[self setCVPixelBuffer:pb];
-				[lock unlock];
-				
-				return YES;
-			}
-		}
-		
-		if (!NSEqualRects(prevRect, [self bounds])) {
-			prevRect = [self bounds];
-			return YES;
-		}
-		if (lastPTS < 0) {
-			return YES;
-		}
-		
-		return NO;
+        return YES;
 	} else {
 		return NO;
 	}
@@ -307,9 +272,57 @@ void MyDisplayReconfigurationCallBack(CGDirectDisplayID display,
 			 forLayerTime:(CFTimeInterval)timeInterval 
 			  displayTime:(const CVTimeStamp *)timeStamp
 {
-	[lock lock];
-	[self drawImage];
-	[lock unlock];
+	if (_stream && !NSEqualSizes([_stream frameSize], NSZeroSize) && !_stream.busy) {
+		if (!NSEqualRects(prevRect, [self bounds])) {
+			prevRect = [self bounds];
+        }
+        
+		BOOL ready = NO;
+		if (!timeStamp) 
+			ready = [_stream readyForCurrent];
+		else
+			ready = [_stream readyForTime:timeStamp];
+		
+		if (ready) {
+			// Prepare CIImage
+			CVPixelBufferRef pb = NULL;
+			double_t pts = -2;
+			
+			if (!timeStamp) 
+				pb = [_stream getCVPixelBufferForCurrentAsPTS:&pts];
+			else
+				pb = [_stream getCVPixelBufferForTime:timeStamp asPTS:&pts];
+			
+			if (pb) {
+				lastPTS = pts;
+				
+				[lock lock];
+				[self setCVPixelBuffer:pb];
+				[self drawImage];
+				[lock unlock];
+                
+                goto bail;
+			} else {
+                //NSLog(@"DEBUG: No pixelBuffer on %@.", (timeStamp ? @"getCVPixelBufferForTime:asPTS:" : @"getCVPixelBufferForCurrentAsPTS:"));
+            }
+        } else {
+            //NSLog(@"DEBUG: No pixelBuffer on %@.", (timeStamp ? @"readyForTime:" : @"readyForCurrent"));
+        }
+        
+        // Fallback: Use last shown image
+        if (image) {
+            [lock lock];
+            [self drawImage];
+            [lock unlock];
+        }
+    } else {
+        // Fallback: Use last shown image
+        if (image) {
+            [lock lock];
+            [self drawImage];
+            [lock unlock];
+        }
+    }
 	
 bail:
 	// Finishing touch by super class
