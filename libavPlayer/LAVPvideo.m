@@ -427,7 +427,7 @@ int queue_picture(VideoState *is, AVFrame *src_frame, double pts, double duratio
 	LAVPLockMutex(is->pictq_mutex);
 	
     /* keep the last already displayed picture in the queue */
-	while (is->pictq_size >= VIDEO_PICTURE_QUEUE_SIZE - 3 && // LAVP: keep some picts left in queue
+	while (is->pictq_size >= VIDEO_PICTURE_QUEUE_SIZE / 2 && // LAVP: keep some picts left in queue
 		   !is->videoq.abort_request) {
 		LAVPCondWait(is->pictq_cond, is->pictq_mutex);
 	}
@@ -698,8 +698,6 @@ int hasImage(void *opaque, double_t targetpts)
 		if (vp) {
             //NSLog(@"DEBUG: hasImage(%.3lf) => (%.3lf); delta=%.3lf)", *targetpts, vp->pts, vp->pts - *targetpts);
             
-			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
-			
 			LAVPUnlockMutex(is->pictq_mutex);
 			return 1;
 		}
@@ -768,8 +766,8 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
             }
         }
         if (!vp) {
-            // Workaround: When all pictures in pictq are later time stamp then targetpts
-            vp = &is->pictq[is->pictq_rindex];
+            int index = is->pictq_rindex;
+            vp = &is->pictq[index];
             
             //NSLog(@"DEBUG: is->pictq_size = %d", is->pictq_size);
         }
@@ -783,12 +781,13 @@ int copyImage(void *opaque, double_t *targetpts, uint8_t* data, int pitch)
             //    NSLog(@"DEBUG: %8.3f %s %8.3f", vp->pts, (vp->pts <= *targetpts?" =<":">  "), *targetpts);
             //}
             
-			if (vp->pts >= 0 && vp->pts < is->lastPTScopied) { // LAVP: use "<" instead of "==" to suppress vibration effect
-
+            if (vp->pts >= 0 && vp->pts == is->lastPTScopied) {
 				LAVPUnlockMutex(is->pictq_mutex);
 				return 2;
 			}
 			
+            // TODO Add support to call blend_subrect() for subq (original:video_image_display())
+            
 #if ALLOW_GPL_CODE
 			uint8_t *in[4] = {vp->bmp->data[0], vp->bmp->data[1], vp->bmp->data[2], vp->bmp->data[3]};
 			size_t inpitch[4] = {vp->bmp->linesize[0], vp->bmp->linesize[1], vp->bmp->linesize[2], vp->bmp->linesize[3]};
@@ -850,8 +849,6 @@ int hasImageCurrent(void *opaque)
             vp = &is->pictq[index];
         }
 		if(vp) {
-			if (vp->pts >= 0 && vp->pts == is->lastPTScopied) goto bail;
-			
             //NSLog(@"DEBUG: hasImageCurrent() => (%.3lf)", vp->pts);
             
 			LAVPUnlockMutex(is->pictq_mutex);
