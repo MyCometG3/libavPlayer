@@ -48,7 +48,6 @@ NSString * const LAVPStreamUpdateRateNotification = @"LAVPStreamUpdateRateNotifi
 	self = [super init];
 	if (self) {
 		url = [sourceURL copy];
-		_htOffset = CVGetCurrentHostTime();
 		currentVol = 1.0;
 		_strictSeek = YES;
 		
@@ -57,6 +56,9 @@ NSString * const LAVPStreamUpdateRateNotification = @"LAVPStreamUpdateRateNotifi
 		if (!decoder) {
             return nil;
 		}
+        
+        // Queue selector to make initial notification.
+        [self performSelector:@selector(setRate:) withObject:NULL afterDelay:0.0];
 	}
 	
 	return self;
@@ -240,7 +242,12 @@ NSString * const LAVPStreamUpdateRateNotification = @"LAVPStreamUpdateRateNotifi
 {
 	//NSLog(@"DEBUG: setRate: %.3f at %.3f", newRate, [decoder position]/1.0e6);
 	
-	if ([decoder rate] == newRate) return;
+    if (!_htOffset) {
+        // Inital call. Cancel remaining setRate: queued on mainthread if exists.
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(setRate:) object:NULL];
+    }
+    
+	if (_htOffset && [decoder rate] == newRate) return;
 	
 	// stop notificatino timer
 	if (timer) {
