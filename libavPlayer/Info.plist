@@ -17,13 +17,13 @@
 	<key>CFBundlePackageType</key>
 	<string>FMWK</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.0a1</string>
+	<string>2.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>2013.12.29</string>
+	<string>2014.01.18</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright MyCometG3, 2011, 2013</string>
+	<string>Copyright MyCometG3, 2011, 2013, 2014</string>
 	<key>NSPrincipalClass</key>
 	<string></string>
 </dict>
