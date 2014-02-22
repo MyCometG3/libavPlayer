@@ -50,4 +50,8 @@ VideoState* stream_open(id opaque, NSURL *sourceURL);
 double_t stream_playRate(VideoState *is);
 void stream_setPlayRate(VideoState *is, double_t newRate);
 
+int stream_getChapterCount(VideoState *is);
+int stream_getChapterCurrent(VideoState *is);
+void stream_seek_chapter(VideoState *is, int incr);
+
 #endif

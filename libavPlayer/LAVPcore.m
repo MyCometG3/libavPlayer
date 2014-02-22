@@ -1126,3 +1126,46 @@ void stream_setPlayRate(VideoState *is, double_t newRate)
     set_clock_speed(&is->audclk, newRate);
     set_clock_speed(&is->extclk, newRate);
 }
+
+int stream_getChapterCount(VideoState *is)
+{
+    return is->ic->nb_chapters;
+}
+
+int stream_getChapterCurrent(VideoState *is)
+{
+    int64_t pos = get_master_clock(is) * AV_TIME_BASE;
+    int i;
+    
+    if (!stream_getChapterCount(is))
+        return 0;
+    
+    /* find the current chapter */
+    for (i = 0; i < is->ic->nb_chapters; i++) {
+        AVChapter *ch = is->ic->chapters[i];
+        if (av_compare_ts(pos, AV_TIME_BASE_Q, ch->start, ch->time_base) < 0) {
+            i--;
+            break;
+        }
+    }
+    
+    return i;
+}
+
+void stream_seek_chapter(VideoState *is, int incr)
+{
+    if (!stream_getChapterCount(is))
+        return;
+    
+    int i = stream_getChapterCurrent(is);
+    
+    i += incr;
+    i = FFMAX(i, 0);
+    if (i >= is->ic->nb_chapters)
+        return;
+    
+    av_log(NULL, AV_LOG_VERBOSE, "Seeking to chapter %d.\n", i);
+    stream_seek(is, av_rescale_q(is->ic->chapters[i]->start, is->ic->chapters[i]->time_base,
+                                 AV_TIME_BASE_Q), 0, 0);
+}
+
